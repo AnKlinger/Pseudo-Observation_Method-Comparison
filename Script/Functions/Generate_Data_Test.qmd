@@ -1,0 +1,410 @@
+---
+title: "Test_Generate_Data"
+format: html
+editor: visual
+---
+
+```{r test treatment allocation based on v1 and v2}
+
+n = 100
+set.seed(21332)
+
+# Creat Correlation Matrix for 4 initial variables z
+correlation_matrix = simdata::cor_from_upper(
+  4, 
+  rbind(c(1,2,0.1), c(1,3,0.5), c(1,4,0.1),
+        c(2,3,0.6), c(2,4,-0.2),
+        c(3,4,-0.5)))
+
+# define Transformation for initial variables z into v1,v2,v3,v4
+transformation = simdata::function_list(
+  v1 = function(z) floor(10 * z[,1] + 55), 
+  v2 = function(z) exp(0.5 * z[,2] + 1.5), 
+  v3 = function(z) exp(0.4 * z[,3] + 3),
+  v4 = function(z) floor(pmax(0, 25 * exp(z[,4]) - 5))
+)
+
+# Define simulation design with correlation, transformation, and from a multivariate normal distribution
+sim_design = simdata::simdesign_mvtnorm(
+  relations = correlation_matrix,
+  transform_initial = transformation,
+  prefix_final = NULL
+)
+
+# Simulate dataset sim_data with variables v1,v2,v3,v4
+sim_data = simdata::simulate_data(sim_design, n_obs = n)
+
+sim_data$v1
+sim_data$v2
+
+
+logit_p <- -4 + 0.085 * sim_data$v1 - 0.35 * sim_data$v2  # Logistic function linear predictor
+p_treat <- 1 / (1 + exp(-logit_p))     # Convert to probability
+
+p_treat
+
+# Impact of v1 on treatment probability
+plot(sim_data$v1, p_treat)
+
+# Impact of v2 on treatment probability
+plot(sim_data$v2, p_treat)
+```
+
+```{r test correlation structure}
+
+# complex data structure, taken from a part of the simdata vignette example 3: Realistic, complex data
+
+correlation_matrix = simdata::cor_from_upper(
+  4, 
+  rbind(c(1,2,0.1), c(1,3,0.5), c(1,4,0.1),
+        c(2,3,0.6), c(2,4,-0.2),
+        c(3,4,-0.5)))
+
+transformation = simdata::function_list(
+  v1 = function(z) floor(10 * z[,1] + 55), 
+  v2 = function(z) exp(0.5 * z[,2] + 1.5), 
+  v3 = function(z) exp(0.4 * z[,3] + 3),
+  v4 = function(z) floor(pmax(0, 25 * exp(z[,4]) - 5))
+)
+
+sim_design = simdata::simdesign_mvtnorm(
+  relations = correlation_matrix,
+  transform_initial = transformation,
+  prefix_final = NULL
+)
+
+# Correlations
+simdata::plot_cor_network(sim_design, seed = 1)
+sim_design$cor_initial
+
+sim_data = simdata::simulate_data(sim_design, n_obs = 10000)
+
+# par(mfrow = c(2,2))
+# plot(1:100, sim_data$v1);plot(1:100, sim_data$v2);plot(1:100, sim_data$v3);plot(1:100, sim_data$v4)
+
+cor(sim_data)
+
+```
+
+```{r test survival time}
+
+set.seed(213)
+n = 100
+beta_v1 <- 0.05
+beta_v4 <- 0.1
+beta_treatment <- -0.7
+
+baseline_lambda = 0.05
+p_weibull = 0.7
+
+# Create Correlation Matrix for 4 initial variables z
+  correlation_matrix = simdata::cor_from_upper(
+    4, 
+    rbind(c(1,2,0.1), c(1,3,0.5), c(1,4,0.1),
+          c(2,3,0.6), c(2,4,-0.2),
+          c(3,4,-0.5)))
+  
+  # define Transformation for initial variables z into v1,v2,v3,v4
+  transformation = simdata::function_list(
+    v1 = function(z) floor(10 * z[,1] + 55), 
+    v2 = function(z) exp(0.5 * z[,2] + 1.5), 
+    v3 = function(z) exp(0.4 * z[,3] + 3),
+    v4 = function(z) floor(pmax(0, 25 * exp(z[,4]) - 5))
+  )
+  
+  # Define simulation design with correlation, transformation, and from a multivariate normal distribution
+  sim_design = simdata::simdesign_mvtnorm(
+    relations = correlation_matrix,
+    transform_initial = transformation,
+    prefix_final = NULL
+  )
+  
+  # Simulate dataset sim_data with variables v1,v2,v3,v4
+sim_data = simdata::simulate_data(sim_design, n_obs = n)
+
+
+# Step 2: Generate treatment assignment
+# Default behavior: treatment probability depends on confounders v1 and v2
+    logit_p <- -4 + 0.085 * sim_data$v1 - 0.35 * sim_data$v2  # Logistic function linear predictor
+    p_treat <- 1 / (1 + exp(-logit_p))     # Convert to probability
+
+Treatment <- rbinom(n, 1, p_treat)  # Assign treatment based on probability
+
+# Step 3: Generate Weibull survival times
+lin_pred <- beta_v1 * sim_data$v1 + beta_v4 * sim_data$v4 + beta_treatment * Treatment
+scale_param <- exp(lin_pred)  # Convert to scale parameter
+  
+  # Weibull survival times
+SurvivalTime <- ( (-log(runif(n))) / (baseline_lambda * scale_param) )^(1/p_weibull)
+
+SurvivalTime
+  
+
+
+```
+
+```{r test observed time}
+source("Generate_Data.R")
+
+data <- simulate_survival_data()
+summary(data$ObservedTime)
+```
+
+```{r show kaplan meier curve}
+library(survival)
+source("Generate_Data.R")
+
+set.seed(1234)
+
+data <- Generate_Data(n = 1000,
+                      beta_treatment = -0.7)
+
+# kaplan meier curve
+fit <- survfit(Surv(ObservedTime, Status) ~ Treatment, data = data)
+plot(fit, col = c("red", "blue"), lty = 1:2, xlab = "Time", ylab = "Survival Probability", xlim = c(0,30),
+     main = "Weibull Survival Simulation")
+legend("bottomleft", legend = c("Control", "Treatment"), col = c("red", "blue"), lty = 1:2)
+abline(v = 10)
+
+```
+
+# Relation of X1 X2 and X4 to treatment and outcome
+
+```{r}
+source("Generate_Data.R")
+
+set.seed(1234)
+
+df <- Generate_Data(n = 100000,
+                    beta_X1 = -0.3,
+                    beta_X4 = 0.45)
+
+# Basic correlations with survival time (continuous)
+cor_with_survival <- cor(df[, c("X1", "X2", "X3", "X4", "SurvivalTime")])
+print(cor_with_survival["SurvivalTime", ])
+
+# Logistic regression for Treatment assignment
+glm_treatment <- glm(Treatment ~ X1 + X2 + X3 + X4, data = df, family = binomial)
+summary(glm_treatment)
+
+# Linear approximation to survival predictors
+lm_survival <- lm(SurvivalTime ~ X1 + X2 + X3 + X4, data = df)
+summary(lm_survival)
+
+
+# Linear approximation to observed time
+lm_survival <- lm(ObservedTime ~ X1 + X2 + X3 + X4 + Treatment, data = df)
+summary(lm_survival)
+
+
+
+
+```
+
+# Check if minimum of 40 is needed for observed time
+
+```{r}
+source("Generate_Data.R")
+
+set.seed(1234)
+
+df <- Generate_Data(n = 100000)
+
+table(df$SurvivalTime > 40)
+table(df$ObservedTime > 40)
+
+```
+
+# Check how variable censoring is by adjusting censoring_rate
+
+```{r}
+source("Generate_Data.R")
+
+set.seed(1234)
+
+df_normal <- Generate_Data(n = 100000,
+                           censoring_rate = 0.05)
+df_low <- Generate_Data(n = 100000,
+                        censoring_rate = 0.025)
+df_high <- Generate_Data(n = 100000,
+                         censoring_rate = 0.1)
+
+summary(df_normal$censoring_time)
+summary(df_low$censoring_time)
+summary(df_high$censoring_time)
+```
+
+# Check how variable observed time is by adjusting max_censoring_time_unif
+
+```{r}
+source("Generate_Data.R")
+
+set.seed(1234)
+
+df <- Generate_Data(n = 100000,
+                    max_censoring_time_unif = 10)
+summary(df$ObservedTime)
+```
+
+
+
+# Grid search for 20%, 40% and 60% censoring before rmst time 10
+
+```{r}
+library(dplyr)
+source("Generate_Data.R")
+
+set.seed(1234)
+
+# Create sequences for the two parameters
+max_censoring_seq <- seq(10, 20, by = 1)
+censoring_rate_seq <- seq(0.01, 0.2, by = 0.01)
+
+# Generate all combinations
+grid <- expand.grid(
+  max_censoring_time_unif = max_censoring_seq,
+  censoring_rate = censoring_rate_seq
+)
+
+# Add third column of zeros
+grid$censoring_at_time_10 <- 0
+
+for(i in 1:nrow(grid)) {
+  df_temp <- Generate_Data(n = 100000,
+                           max_censoring_time_unif = grid$max_censoring_time_unif[i],
+                           censoring_rate = grid$censoring_rate[i])
+  
+  # get censoring proportions
+  grid$censoring_at_time_10 [i] <- round(mean(df_temp$censoring_time <= 10), digits = 2)
+}
+
+filtered_grid <- grid %>%
+  filter(
+    between(censoring_at_time_10, 0.17, 0.23) |
+    between(censoring_at_time_10, 0.37, 0.43) |
+    between(censoring_at_time_10, 0.57, 0.63)
+  )
+
+filtered_grid <- arrange(filtered_grid, censoring_at_time_10)
+grid <- arrange(grid, censoring_at_time_10)
+
+```
+
+Die Werte sind: 20 und 0.02 für 20%, 20 und 0.06 für 40%, 15 und 0.08 für 60%
+
+# Calculate true treatment effect and show it graphically
+
+```{r Calculate}
+source("Generate_Data.R")
+# simulate big dataset for the same individuals, once with treatment for everyone, once with treatment for no one
+
+set.seed(1)
+data_all_treatment <- Generate_Data(n = 100000,
+                                    p_treat_manual = 1,
+                                    beta_treatment = -0.5)
+
+set.seed(1)
+data_no_treatment <- Generate_Data(n = 100000,
+                                   p_treat_manual = 0,
+                                   beta_treatment = -0.5)
+
+data <- rbind(data_all_treatment, data_no_treatment)
+```
+
+```{r Show difference}
+library(survival)
+source("Generate_Data.R")
+
+# kaplan meier curve
+fit <- survfit(Surv(ObservedTime, Status) ~ Treatment, data = data)
+plot(fit, col = c("red", "blue"), lty = 1:2, xlab = "Time", ylab = "Survival Probability", xlim = c(0,30),
+     main = "True Treatment difference")
+legend("bottomleft", legend = c("Control", "Treatment"), col = c("red", "blue"), lty = 1:2)
+abline(v = 10)
+
+data_simulated_normally <- Generate_Data(n = 100000,
+                                         beta_treatment = -0.5)
+# kaplan meier curve
+fit <- survfit(Surv(ObservedTime, Status) ~ Treatment, data = data_simulated_normally)
+plot(fit, col = c("red", "blue"), lty = 1:2, xlab = "Time", ylab = "Survival Probability", xlim = c(0,30),
+     main = "Descriptive Treatment difference")
+legend("bottomleft", legend = c("Control", "Treatment"), col = c("red", "blue"), lty = 1:2)
+abline(v = 10)
+```
+
+```{r function for descriptive vs true treatment effect}
+descriptive_vs_true <- function(beta_treatment, treatment_shape_effect){
+  
+  library(survival)
+  library(ggplot2)
+  source("Generate_Data.R")
+  
+  # simulate big dataset for the same individuals, once with treatment for everyone, once with treatment for no one
+
+  set.seed(1)
+  data_all_treatment <- Generate_Data(n = 100000,
+                                      p_treat_manual = 1,
+                                      beta_treatment = beta_treatment,
+                                      treatment_shape_effect = treatment_shape_effect,
+                                      censoring = FALSE)
+
+  set.seed(1)
+  data_no_treatment <- Generate_Data(n = 100000,
+                                    p_treat_manual = 0,
+                                    beta_treatment = beta_treatment,
+                                    treatment_shape_effect = treatment_shape_effect,
+                                    censoring = FALSE)
+
+  data <- rbind(data_all_treatment, data_no_treatment)
+  
+  # kaplan meier curve
+  fit <- survfit(Surv(ObservedTime, Status) ~ Treatment, data = data)
+  plot(fit, col = c("red", "blue"), lty = 1:2, xlab = "Time", ylab = "Survival Probability", xlim = c(0,30),
+       main = "True Treatment difference")
+  legend("bottomleft", legend = c("Control", "Treatment"), col = c("red", "blue"), lty = 1:2)
+  abline(v = 10)
+
+  data_simulated_normally <- Generate_Data(n = 100000,
+                                           beta_treatment = beta_treatment,
+                                           treatment_shape_effect = treatment_shape_effect,
+                                           censoring = FALSE)
+  # kaplan meier curve
+  fit <- survfit(Surv(ObservedTime, Status) ~ Treatment, data = data_simulated_normally)
+  plot(fit, col = c("red", "blue"), lty = 1:2, xlab = "Time", ylab = "Survival Probability", xlim = c(0,30),
+       main = "Descriptive Treatment difference")
+  legend("bottomleft", legend = c("Control", "Treatment"), col = c("red", "blue"), lty = 1:2)
+  abline(v = 10)
+  
+  # Calculate RMST for both curves
+  
+  # Compute the Kaplan-Meier curves
+  km_fit_all_treatment <- survfit(Surv(ObservedTime, Status) ~ 1, data = data_all_treatment)  # One curve for all individuals
+  km_fit_no_treatment <- survfit(Surv(ObservedTime, Status) ~ 1, data = data_no_treatment)  # One curve for all individuals
+  
+  # Extract RMST at time tau
+  RMST_all_treatment <- survival:::survmean(km_fit_all_treatment, rmean=10)[[1]]["rmean"]
+  RMST_no_treatment <- survival:::survmean(km_fit_no_treatment, rmean=10)[[1]]["rmean"] 
+  
+  # Create a data frame for plotting
+  df <- data.frame(
+    Group = c("Treatment", "Control"),
+    RMST = c(RMST_all_treatment, RMST_no_treatment)
+  )
+
+  # Plot
+  ggplot(df, aes(x = Group, y = RMST, fill = Group)) +
+   geom_bar(stat = "identity", width = 0.6) +
+   scale_fill_manual(values = c("Treatment" = "blue", "Control" = "red")) +
+   labs(y = "RMST", x = "") +
+   theme_minimal() +
+   theme(legend.position = "none")
+  
+}
+
+descriptive_vs_true(beta_treatment = -0.5, treatment_shape_effect = 0) # positive treatment effect, PH holds
+descriptive_vs_true(beta_treatment = 0, treatment_shape_effect = 0) # no treatment effect
+descriptive_vs_true(beta_treatment = 0.5, treatment_shape_effect = -0.3) # both RMST equal
+descriptive_vs_true(beta_treatment = -0.7, treatment_shape_effect = 0.37) # crossing KM curves
+
+# descriptive_vs_true(beta_treatment = 0.7, treatment_shape_effect = -0.37) # crossing KM curves
+```
