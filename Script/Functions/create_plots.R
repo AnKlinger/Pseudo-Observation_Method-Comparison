@@ -17,8 +17,8 @@ create_plots <- function(data,
                            "CRF" = "#A0522D"        # Brown
                          )) {
 
-if (!require("tidyverse")) install.packages("tidyverse", dependencies=TRUE)
-if (!require("patchwork")) install.packages("patchwork", dependencies=TRUE)
+if (!require("tidyverse")) {install.packages("tidyverse", dependencies=TRUE); library(tidyverse)}
+if (!require("patchwork")) {install.packages("patchwork", dependencies=TRUE); library(patchwork)}
   
 # Add factor levels to results_df for legend
 results_df$model <- factor(results_df$model,

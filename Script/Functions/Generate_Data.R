@@ -15,7 +15,7 @@ Generate_Data <- function(n = 1000,
                           seed = NULL) { 
   
   # Load required package
-  if (!require("simdata")) install.packages("simdata", dependencies=TRUE)
+  if (!require("simdata")) {install.packages("simdata", dependencies=TRUE); library(simdata)}
   
   # Set seed for reproducibility
   if(!is.null(seed)){

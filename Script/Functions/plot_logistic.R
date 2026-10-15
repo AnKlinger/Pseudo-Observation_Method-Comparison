@@ -17,8 +17,8 @@ plot_logistic <- function(data, variable, label,
                           )) {
   
   # Load required packages
-  if (!require("rms")) install.packages("rms", dependencies=TRUE)
-  if (!require("tidyverse")) install.packages("tidyverse", dependencies=TRUE)
+  if (!require("rms")) {install.packages("rms", dependencies=TRUE); library(rms)}
+  if (!require("tidyverse")) {install.packages("tidyverse", dependencies=TRUE); library(tidyverse)}
   
   data$highlight <- ifelse(data$model %in% highlight_models, "highlight", "background")
   

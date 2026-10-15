@@ -8,10 +8,10 @@ bias_big_dataset <- function(beta_treatment,
                              max_censoring_time_unif) {
   
   # Load required packages
-  if (!require("rms")) install.packages("rms", dependencies=TRUE)
-  if (!require("geepack")) install.packages("geepack", dependencies=TRUE)
-  if (!require("grf")) install.packages("grf", dependencies=TRUE)
-  if (!require("randomForest")) install.packages("randomForest", dependencies=TRUE)
+  if (!require("rms")) {install.packages("rms", dependencies=TRUE); library(rms)}
+  if (!require("geepack")) {install.packages("geepack", dependencies=TRUE); library(geepack)}
+  if (!require("grf")) {install.packages("grf", dependencies=TRUE); library(grf)}
+  if (!require("randomForest")) {install.packages("randomForest", dependencies=TRUE); library(randomForest)}
   
   # Load necessary functions
   source("Script/Functions/Generate_Data.R")

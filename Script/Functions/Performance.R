@@ -5,10 +5,10 @@
 Performance <- function(data, true_treatment_effect, n_boot, tau) { 
   
   # Load required packages
-  if (!require("rms")) install.packages("rms", dependencies=TRUE)
-  if (!require("geepack")) install.packages("geepack", dependencies=TRUE)
-  if (!require("grf")) install.packages("grf", dependencies=TRUE)
-  if (!require("randomForest")) install.packages("randomForest", dependencies=TRUE)
+  if (!require("rms")) {install.packages("rms", dependencies=TRUE); library(rms)}
+  if (!require("geepack")) {install.packages("geepack", dependencies=TRUE); library(geepack)}
+  if (!require("grf")) {install.packages("grf", dependencies=TRUE); library(grf)}
+  if (!require("randomForest")) {install.packages("randomForest", dependencies=TRUE); library(randomForest)}
   
   # Load function for Weibull model
   source("Script/Functions/Calculate_Weibull_RMST_Treatment_effect.R")

@@ -22,9 +22,9 @@ Wrapper <- function(n = 1000,
   source("Script/Functions/Performance.R")
   
   # Load necessary libaries
-  if (!require("pseudo")) install.packages("pseudo", dependencies=TRUE)
-  if (!require("dplyr")) install.packages("dplyr", dependencies=TRUE)
-  if (!require("survival")) install.packages("survival", dependencies=TRUE)
+  if (!require("pseudo")) {install.packages("pseudo", dependencies=TRUE); library(pseudo)}
+  if (!require("dplyr")) {install.packages("dplyr", dependencies=TRUE); library(dplyr)}
+  if (!require("survival")) {install.packages("survival", dependencies=TRUE); library(survival)}
   
   
   # Set seed 

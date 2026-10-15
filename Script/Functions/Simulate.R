@@ -18,7 +18,7 @@ Simulate <- function(sample_sizes = 100:1000,
                      n_workers = future::availableCores() - 1) {
   
   # Load required package
-  if (!require("future.apply")) install.packages("future.apply", dependencies=TRUE)
+  if (!require("future.apply")) {install.packages("future.apply", dependencies=TRUE); library(future.apply)}
   
   # Load external functions
   source("Script/Functions/Wrapper.R")

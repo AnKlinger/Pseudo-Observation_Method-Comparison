@@ -17,7 +17,7 @@ Calculate_true_treatment_effect <- function(baseline_lambda = 0.05,
   
   # Load necessary functions and packages
   source("Script/Functions/Generate_Data.R")
-  if (!require("survival")) install.packages("survival", dependencies=TRUE)
+  if (!require("survival")) {install.packages("survival", dependencies=TRUE); library(survival)}
   
   set.seed(1)
   data_all_treatment <- Generate_Data(n = 100000, 

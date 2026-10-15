@@ -7,7 +7,7 @@ Calculate_Weibull_RMST_Treatment_effect <- function(data, tau) {
   ### This is the Oracle Model!!! ###
   
   # Load necessary libraries
-  if (!require("flexsurv")) install.packages("flexsurv", dependencies = TRUE)
+  if (!require("flexsurv")) {install.packages("flexsurv", dependencies = TRUE); library(flexsurv)}
   
   # Fit a Weibull model with shape modeled as function of X1, X4, Treatment
   flex_model <- flexsurvreg(
