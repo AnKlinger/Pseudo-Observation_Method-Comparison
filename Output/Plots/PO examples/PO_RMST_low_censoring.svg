@@ -19,13 +19,14 @@
     }
   ]]></style>
 </defs>
-<rect width='100%' height='100%' style='stroke: none; fill: none;'/>
+<rect width='100%' height='100%' style='stroke: none; fill: #FFFFFF;'/>
 <defs>
   <clipPath id='cpMC4wMHwzMzguNDB8MC4wMHwyMTYuMDA='>
     <rect x='0.00' y='0.00' width='338.40' height='216.00' />
   </clipPath>
 </defs>
 <g clip-path='url(#cpMC4wMHwzMzguNDB8MC4wMHwyMTYuMDA=)'>
+<rect x='0.000000000000032' y='0.00' width='338.40' height='216.00' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
 </g>
 <defs>
   <clipPath id='cpMzguMDJ8MzMyLjkyfDM3LjQzfDE4NC41MA=='>
