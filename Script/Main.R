@@ -12,14 +12,20 @@ rm(list = ls())
 
 source("Script/Functions/Simulate.R")
 
+n <- 4
+
 # Calculate uniformly distributed sample sizes on the log2 scale
 uniform_sequence_on_log_scale <- seq(from = log(100.1, base = 2),
                                      to = log(1050, base = 2),
-                                     length.out = 1000)
+                                     length.out = n)
 # Calculate real sample sizes for simulation
 sample_sizes <- round(2^uniform_sequence_on_log_scale)
 # Add anchor points for point estimates and spline knots
-sample_sizes <- c(sample_sizes, rep(125, 100), rep(250, 100), rep(500, 100), rep(1000, 100))
+sample_sizes <- c(sample_sizes,
+                  rep(125, max(round(n/10), 1)),
+                  rep(250, max(round(n/10), 1)),
+                  rep(500, max(round(n/10), 1)),
+                  rep(1000, max(round(n/10), 1)))
 
 # Define scenarios with fixed scenario numbers
 scenarios <- list(
@@ -31,9 +37,9 @@ scenarios <- list(
 
 # Optional: Comment out scenarios you don't want to run
 # scenarios["1"] <- NULL  # Uncomment this line to skip scenario 1
-# scenarios["2"] <- NULL  # Uncomment this line to skip scenario 2
-# scenarios["3"] <- NULL  # Uncomment this line to skip scenario 3
-# scenarios["4"] <- NULL  # Uncomment this line to skip scenario 4
+scenarios["2"] <- NULL  # Uncomment this line to skip scenario 2
+scenarios["3"] <- NULL  # Uncomment this line to skip scenario 3
+scenarios["4"] <- NULL  # Uncomment this line to skip scenario 4
 
 # Define censoring settings
 censoring_settings <- list(
@@ -41,6 +47,8 @@ censoring_settings <- list(
   list(max_censoring_time_unif = 20, censoring_rate = 0.06, label = 40),
   list(max_censoring_time_unif = 15, censoring_rate = 0.08, label = 60)
 )
+
+start <- Sys.time()
 
 # Loop over scenarios and censoring settings
 for (scenario_number in names(scenarios)) {
@@ -68,13 +76,16 @@ for (scenario_number in names(scenarios)) {
     results_df$simulation_time_hours <- simulation_duration
     
     # Create filename and save
+    # filename <- paste0("Output/Scenario_", scenario_number, 
+    #                    "_censoring_", censoring$label, ".RData")
     filename <- paste0("Output/Scenario_", scenario_number, 
-                       "_censoring_", censoring$label, ".RData")
+                       "_censoring_", censoring$label, "_test", ".RData")
     save(results_df, file = filename)
   }
 }
 
-
+end <- Sys.time()
+end-start
 
 
 
@@ -215,42 +226,42 @@ for(i in 1:4) {
 
 
 
-# ========================================================================================================================================
-##### Visualize Proportion of Successes in Binary Variables #####
-# ========================================================================================================================================
-
-
-rm(list = ls())
-
-load("Output/Scenario_4_censoring_60.RData")
-
-library(tidyverse)
-
-GEE_results_df <- results_df %>% filter(model == "GEE")
-
-plot(y = GEE_results_df$CI_includes_true_value, x = GEE_results_df$n)
-
-# Create 20 equal-width bins of 'n'
-GEE_results_df <- GEE_results_df %>%
-  mutate(n_bin = cut(n, breaks = 20))
-
-# Calculate proportion of CI_includes_true_value == 1 in each bin
-prop_by_bin <- GEE_results_df %>%
-  group_by(n_bin) %>%
-  summarise(
-    count = n(),
-    num_success = sum(CI_includes_true_value == 1),
-    proportion = num_success / count
-  )
-
-# Plot the proportions
-ggplot(prop_by_bin, aes(x = n_bin, y = proportion)) +
-  geom_col(fill = "steelblue") +
-  labs(x = "n (binned into 20 intervals)", 
-       y = "Proportion where CI includes true value", 
-       title = "Proportion of CI_includes_true_value == 1 by n bin") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+# # ========================================================================================================================================
+# ##### Visualize Proportion of Successes in Binary Variables #####
+# # ========================================================================================================================================
+# 
+# 
+# rm(list = ls())
+# 
+# load("Output/Scenario_4_censoring_60.RData")
+# 
+# library(tidyverse)
+# 
+# GEE_results_df <- results_df %>% filter(model == "GEE")
+# 
+# plot(y = GEE_results_df$CI_includes_true_value, x = GEE_results_df$n)
+# 
+# # Create 20 equal-width bins of 'n'
+# GEE_results_df <- GEE_results_df %>%
+#   mutate(n_bin = cut(n, breaks = 20))
+# 
+# # Calculate proportion of CI_includes_true_value == 1 in each bin
+# prop_by_bin <- GEE_results_df %>%
+#   group_by(n_bin) %>%
+#   summarise(
+#     count = n(),
+#     num_success = sum(CI_includes_true_value == 1),
+#     proportion = num_success / count
+#   )
+# 
+# # Plot the proportions
+# ggplot(prop_by_bin, aes(x = n_bin, y = proportion)) +
+#   geom_col(fill = "steelblue") +
+#   labs(x = "n (binned into 20 intervals)", 
+#        y = "Proportion where CI includes true value", 
+#        title = "Proportion of CI_includes_true_value == 1 by n bin") +
+#   theme_minimal() +
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 
 
@@ -337,156 +348,156 @@ ggsave(filename = "Output/Plots/PO examples/PO_RMST_high_censoring.svg",
 
 
 
-# ========================================================================================================================================
-##### Bias of Models #####
-# ========================================================================================================================================
-
-
-# To know if models are biased, use them on a big dataset
-
-
-rm(list = ls())
-
-source("Script/Functions/bias_big_dataset.R")
-
-
-##### Bias Simulation #####
-
-set.seed(3932)
-
-# Empty list to store all results
-results_list <- list()
-
-scenarios <- list(
-  "1" = list(beta_treatment = -0.5, treatment_shape_effect = 0),
-  "2" = list(beta_treatment = 0, treatment_shape_effect = 0),
-  "3" = list(beta_treatment = 0.5, treatment_shape_effect = -0.3),
-  "4" = list(beta_treatment = -1, treatment_shape_effect = 0.49)
-)
-
-# Define censoring settings
-censoring_settings <- list(
-  list(max_censoring_time_unif = 20, censoring_rate = 0.02, label = 20),
-  list(max_censoring_time_unif = 20, censoring_rate = 0.06, label = 40),
-  list(max_censoring_time_unif = 15, censoring_rate = 0.08, label = 60)
-)
-
-# Optional: Comment out scenarios you don't want to run
-# scenarios["1"] <- NULL  # Uncomment this line to skip scenario 1
-# scenarios["2"] <- NULL  # Uncomment this line to skip scenario 2
-# scenarios["3"] <- NULL  # Uncomment this line to skip scenario 3
-# scenarios["4"] <- NULL  # Uncomment this line to skip scenario 4
-
-library(future)
-library(future.apply)
-
-# Set parallel plan
-plan(multisession, workers = availableCores() - 1)  # or multicore on Linux/Mac, multisession is cross-platform
-
-# Create list of combinations to iterate over
-param_grid <- expand.grid(
-  scenario_number = names(scenarios),
-  censoring_idx = seq_along(censoring_settings),
-  replicate = 1:1000
-)
-
-start <- Sys.time()
-
-# Use future_lapply to parallelize the loop
-results_list <- future_lapply(1:nrow(param_grid), function(i) {
-  row <- param_grid[i, ]
-  
-  scenario_number <- as.character(row$scenario_number)
-  scenario <- scenarios[[scenario_number]]
-  censoring <- censoring_settings[[row$censoring_idx]]
-  replicate <- row$replicate
-  
-  result_df <- bias_big_dataset(
-    beta_treatment = scenario$beta_treatment,
-    treatment_shape_effect = scenario$treatment_shape_effect,
-    censoring_rate = censoring$censoring_rate,
-    max_censoring_time_unif = censoring$max_censoring_time_unif
-  )
-  
-  # Add identifying columns
-  result_df$Scenario <- paste0("Scenario_", scenario_number, "_censoring_", censoring$label)
-  result_df$Replicate <- replicate
-  
-  return(result_df)
-})
-
-end <- Sys.time()
-end - start
-
-
-# Combine all rows into one final data frame
-df <- do.call(rbind, results_list)
-
-save(df, file = "Output/model_bias.RData")
-
-
-
-
-# ========================================================================================================================================
-##### Visualization of Bias #####
-# ========================================================================================================================================
-
-rm(list = ls())
-load("Output/model_bias.RData")
-library(tidyverse)
-
-# Average bias over replicates
-df <- df %>%
-  group_by(Scenario) %>%
-  summarise(
-    Scenario = first(Scenario),
-    true_treatment_effect = first(true_treatment_effect),
-    PO_bias = mean(PO_bias, na.rm = TRUE),
-    PO_splines_bias = mean(PO_splines_bias, na.rm = TRUE),
-    GEE_bias = mean(GEE_bias, na.rm = TRUE),
-    GEE_splines_bias = mean(GEE_splines_bias, na.rm = TRUE),
-    RF_bias = mean(RF_bias, na.rm = TRUE),
-    WB_bias = mean(WB_bias, na.rm = TRUE),
-    .groups = "drop"
-  )
-
-# Reshape to long format
-df_long <- df %>%
-  pivot_longer(
-    cols = ends_with("_bias"),
-    names_to = "model",
-    values_to = "bias"
-  )
-
-# Ensure Scenario is a factor with levels in desired top-to-bottom order
-df_long <- df_long %>%
-  mutate(Scenario = factor(Scenario, levels = rev(unique(Scenario))))
-
-# Extract true_treatment_effect per scenario (assuming it's constant within scenario)
-treat_effect_labels <- df_long %>%
-  group_by(Scenario) %>%
-  summarise(true_treatment_effect = unique(true_treatment_effect)) %>%
-  arrange(Scenario)
-
-# Create the plot
-model_bias_plot <- ggplot(df_long, aes(x = bias, y = Scenario, color = model, shape = model)) +
-  geom_point(size = 4, position = position_dodge(width = 0.7)) +
-  geom_vline(xintercept = 0, linetype = "dashed", color = "black") +
-  labs(
-    title = "Bias of Models per Scenario",
-    x = "Bias",
-    y = "Scenario"
-  ) +
-  scale_y_discrete(
-    labels = paste0(treat_effect_labels$Scenario, " (True TE: ", round(treat_effect_labels$true_treatment_effect, 3), ")")
-  ) +
-  theme_minimal() +
-  theme(
-    axis.text.y = element_text(size = 10),
-    legend.title = element_blank()
-  )
-
-save(model_bias_plot, file = "Output/model_bias_plot.RData")
+# # ========================================================================================================================================
+# ##### Bias of Models #####
+# # ========================================================================================================================================
+# 
+# 
+# # To know if models are biased, use them on a big dataset
+# 
+# 
+# rm(list = ls())
+# 
+# source("Script/Functions/bias_big_dataset.R")
+# 
+# 
+# ##### Bias Simulation #####
+# 
+# set.seed(3932)
+# 
+# # Empty list to store all results
+# results_list <- list()
+# 
+# scenarios <- list(
+#   "1" = list(beta_treatment = -0.5, treatment_shape_effect = 0),
+#   "2" = list(beta_treatment = 0, treatment_shape_effect = 0),
+#   "3" = list(beta_treatment = 0.5, treatment_shape_effect = -0.3),
+#   "4" = list(beta_treatment = -1, treatment_shape_effect = 0.49)
+# )
+# 
+# # Define censoring settings
+# censoring_settings <- list(
+#   list(max_censoring_time_unif = 20, censoring_rate = 0.02, label = 20),
+#   list(max_censoring_time_unif = 20, censoring_rate = 0.06, label = 40),
+#   list(max_censoring_time_unif = 15, censoring_rate = 0.08, label = 60)
+# )
+# 
+# # Optional: Comment out scenarios you don't want to run
+# # scenarios["1"] <- NULL  # Uncomment this line to skip scenario 1
+# # scenarios["2"] <- NULL  # Uncomment this line to skip scenario 2
+# # scenarios["3"] <- NULL  # Uncomment this line to skip scenario 3
+# # scenarios["4"] <- NULL  # Uncomment this line to skip scenario 4
+# 
+# library(future)
+# library(future.apply)
+# 
+# # Set parallel plan
+# plan(multisession, workers = availableCores() - 1)  # or multicore on Linux/Mac, multisession is cross-platform
+# 
+# # Create list of combinations to iterate over
+# param_grid <- expand.grid(
+#   scenario_number = names(scenarios),
+#   censoring_idx = seq_along(censoring_settings),
+#   replicate = 1:1000
+# )
+# 
+# start <- Sys.time()
+# 
+# # Use future_lapply to parallelize the loop
+# results_list <- future_lapply(1:nrow(param_grid), function(i) {
+#   row <- param_grid[i, ]
+#   
+#   scenario_number <- as.character(row$scenario_number)
+#   scenario <- scenarios[[scenario_number]]
+#   censoring <- censoring_settings[[row$censoring_idx]]
+#   replicate <- row$replicate
+#   
+#   result_df <- bias_big_dataset(
+#     beta_treatment = scenario$beta_treatment,
+#     treatment_shape_effect = scenario$treatment_shape_effect,
+#     censoring_rate = censoring$censoring_rate,
+#     max_censoring_time_unif = censoring$max_censoring_time_unif
+#   )
+#   
+#   # Add identifying columns
+#   result_df$Scenario <- paste0("Scenario_", scenario_number, "_censoring_", censoring$label)
+#   result_df$Replicate <- replicate
+#   
+#   return(result_df)
+# })
+# 
+# end <- Sys.time()
+# end - start
+# 
+# 
+# # Combine all rows into one final data frame
+# df <- do.call(rbind, results_list)
+# 
+# save(df, file = "Output/model_bias.RData")
+# 
+# 
+# 
+# 
+# # ========================================================================================================================================
+# ##### Visualization of Bias #####
+# # ========================================================================================================================================
+# 
+# rm(list = ls())
+# load("Output/model_bias.RData")
+# library(tidyverse)
+# 
+# # Average bias over replicates
+# df <- df %>%
+#   group_by(Scenario) %>%
+#   summarise(
+#     Scenario = first(Scenario),
+#     true_treatment_effect = first(true_treatment_effect),
+#     PO_bias = mean(PO_bias, na.rm = TRUE),
+#     PO_splines_bias = mean(PO_splines_bias, na.rm = TRUE),
+#     GEE_bias = mean(GEE_bias, na.rm = TRUE),
+#     GEE_splines_bias = mean(GEE_splines_bias, na.rm = TRUE),
+#     RF_bias = mean(RF_bias, na.rm = TRUE),
+#     WB_bias = mean(WB_bias, na.rm = TRUE),
+#     .groups = "drop"
+#   )
+# 
+# # Reshape to long format
+# df_long <- df %>%
+#   pivot_longer(
+#     cols = ends_with("_bias"),
+#     names_to = "model",
+#     values_to = "bias"
+#   )
+# 
+# # Ensure Scenario is a factor with levels in desired top-to-bottom order
+# df_long <- df_long %>%
+#   mutate(Scenario = factor(Scenario, levels = rev(unique(Scenario))))
+# 
+# # Extract true_treatment_effect per scenario (assuming it's constant within scenario)
+# treat_effect_labels <- df_long %>%
+#   group_by(Scenario) %>%
+#   summarise(true_treatment_effect = unique(true_treatment_effect)) %>%
+#   arrange(Scenario)
+# 
+# # Create the plot
+# model_bias_plot <- ggplot(df_long, aes(x = bias, y = Scenario, color = model, shape = model)) +
+#   geom_point(size = 4, position = position_dodge(width = 0.7)) +
+#   geom_vline(xintercept = 0, linetype = "dashed", color = "black") +
+#   labs(
+#     title = "Bias of Models per Scenario",
+#     x = "Bias",
+#     y = "Scenario"
+#   ) +
+#   scale_y_discrete(
+#     labels = paste0(treat_effect_labels$Scenario, " (True TE: ", round(treat_effect_labels$true_treatment_effect, 3), ")")
+#   ) +
+#   theme_minimal() +
+#   theme(
+#     axis.text.y = element_text(size = 10),
+#     legend.title = element_blank()
+#   )
+# 
+# save(model_bias_plot, file = "Output/model_bias_plot.RData")
   
 
 
