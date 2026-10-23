@@ -12,7 +12,7 @@ rm(list = ls())
 
 source("Script/Functions/Simulate.R")
 
-n <- 4
+n <- 1000
 
 # Calculate uniformly distributed sample sizes on the log2 scale
 uniform_sequence_on_log_scale <- seq(from = log(100.1, base = 2),
@@ -79,7 +79,7 @@ for (scenario_number in names(scenarios)) {
     # filename <- paste0("Output/Scenario_", scenario_number, 
     #                    "_censoring_", censoring$label, ".RData")
     filename <- paste0("Output/Scenario_", scenario_number, 
-                       "_censoring_", censoring$label, "_test", ".RData")
+                       "_censoring_", censoring$label, ".RData")
     save(results_df, file = filename)
   }
 }
@@ -101,11 +101,13 @@ end-start
 ##### Visualization of Scenarios with Survival Curves #####
 # ========================================================================================================================================
 
-library(survival)
+if (!require("survival")) {install.packages("survival", dependencies=TRUE); library(survival)}
 source("Script/Functions/Generate_Data.R")
 
-simulate_and_plot <- function(beta_treatment, treatment_shape_effect, Scenario) {
+## Simulate the true and the descriptive survival curves for one population:
+simulate_fits <- function(beta_treatment, treatment_shape_effect) {
   
+  ## Simulate everyone treated:
   set.seed(1)
   data_all_treatment <- Generate_Data(
     n = 20000,
@@ -115,6 +117,7 @@ simulate_and_plot <- function(beta_treatment, treatment_shape_effect, Scenario) 
     censoring = FALSE
   )
   
+  ## Simulate no one treated:
   set.seed(1)
   data_no_treatment <- Generate_Data(
     n = 20000,
@@ -124,99 +127,68 @@ simulate_and_plot <- function(beta_treatment, treatment_shape_effect, Scenario) 
     censoring = FALSE
   )
   
+  ## Fit the true curves on the combined data:
   data <- rbind(data_all_treatment, data_no_treatment)
-  
   fit_true <- survfit(Surv(ObservedTime, Status) ~ Treatment, data = data)
   
+  ## Fit the descriptive curves on normally simulated data:
   data_simulated_normally <- Generate_Data(
     n = 20000,
     beta_treatment = beta_treatment,
     treatment_shape_effect = treatment_shape_effect,
     censoring = FALSE
   )
-  
   fit_descriptive <- survfit(Surv(ObservedTime, Status) ~ Treatment, data = data_simulated_normally)
   
-  # Kaplan Meier Plot
-  svg(paste0("Output/Plots/Scenario Visualization/Kaplan_Meier_", Scenario, ".svg"),
-      width = 5, height = 3.75)
-  
-  par(mar = c(4, 4, 4, 1) + 0.1) # default is c(5, 4, 4, 2) + 0.1
-  
-  plot(fit_true, col = c("red", "blue"), lty = c(1,1), lwd = 1.5, xlab = "Time",
-       xlim = c(0, 11), ylim = c(0.3, 1))
-       #main = paste0("Survival Curves of Treatment (", "Population ", Scenario, ")"))
-  
-  lines(fit_descriptive, col = c("red", "blue"), lty = c(2,2))
-  
-  segments(x0 = 10, y0 = 0.3, x1 = 10, y1 = 1, lty = 2, col = "black")
-  
-  legend("bottomleft",
-         legend = c("Control (Descriptive)", "Treatment (Descriptive)",
-                    "Control (True)", "Treatment (True)"),
-         col = c("red", "blue", "red", "blue"),
-         lty = c(2, 2, 1, 1), bty = "n")
-
-  dev.off()
+  list(true = fit_true, descriptive = fit_descriptive)
 }
 
-# Define parameter combinations
+## Draw one Kaplan Meier panel:
+plot_panel <- function(fits, Scenario) {
+  
+  ## Plot the true curves:
+  plot(fits$true, col = c("red", "blue"), lty = c(1, 1), lwd = 1.5, xlab = "Time",
+       xlim = c(0, 11), ylim = c(0.3, 1), main = paste("Population", Scenario))
+  
+  ## Add the descriptive curves:
+  lines(fits$descriptive, col = c("red", "blue"), lty = c(2, 2))
+  
+  ## Add the vertical line at time 10:
+  segments(x0 = 10, y0 = 0.3, x1 = 10, y1 = 1, lty = 2, col = "black")
+}
+
+## Define parameter combinations:
 params <- data.frame(
   beta_treatment = c(-0.5, 0, 0.5, -1),
   treatment_shape_effect = c(0, 0, -0.3, 0.49),
   Scenario = c(1, 2, 3, 4)
 )
 
-# Loop over each row
+## Open the graphics device and set up a 2x2 layout with space for a shared legend at the bottom:
+svg("Output/Plots/Scenario Visualization/Kaplan_Meier_all_populations.svg",
+    width = 7, height = 6.5)
+par(mfrow = c(2, 2), mar = c(4, 4, 3, 1) + 0.1, oma = c(3, 0, 0, 0))
+
+## Create one panel per population:
 for (i in 1:nrow(params)) {
-  simulate_and_plot(
+  fits <- simulate_fits(
     beta_treatment = params$beta_treatment[i],
-    treatment_shape_effect = params$treatment_shape_effect[i],
-    Scenario = params$Scenario[i]
+    treatment_shape_effect = params$treatment_shape_effect[i]
   )
+  plot_panel(fits, params$Scenario[i])
 }
 
+## Add one shared legend in the bottom margin:
+par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0), mar = c(0, 0, 0, 0), new = TRUE)
+plot(0, 0, type = "n", bty = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "")
+legend("bottom", ncol = 2, bty = "n", xpd = TRUE,
+       legend = c("Control (True)", "Treatment (True)",
+                  "Control (Descriptive)", "Treatment (Descriptive)"),
+       col = c("red", "blue", "red", "blue"),
+       lty = c(1, 1, 2, 2))
 
+dev.off()
 
-
-
-
-
-
-
-
-# ========================================================================================================================================
-##### Calculate Raw RMST for each population #####
-# ========================================================================================================================================
-
-source("Script/Functions/Generate_Data.R")
-library(survival)
-
-scenarios <- list(
-  "1" = list(beta_treatment = -0.5, treatment_shape_effect = 0),
-  "2" = list(beta_treatment = 0, treatment_shape_effect = 0),
-  "3" = list(beta_treatment = 0.5, treatment_shape_effect = -0.3),
-  "4" = list(beta_treatment = -1, treatment_shape_effect = 0.49)
-)
-tau = 10
-
-for(i in 1:4) {
-  set.seed(1)
-  scenario <- scenarios[[i]]
-  data <- Generate_Data(n = 100000,
-                        beta_treatment = scenario$beta_treatment,
-                        treatment_shape_effect = scenario$treatment_shape_effect,
-                        censoring = FALSE
-  ) 
-  
-  
-  # Compute the Kaplan-Meier curves
-  km_fit<- survfit(Surv(ObservedTime, Status) ~ Treatment, data = data)  # One curve for all individuals
-  
-  # Extract RMST at time tau
-  RMST <- survival:::survmean(km_fit, rmean=tau)$matrix[1:2, "rmean"]
-  print(paste0("Population ", i, ": ", RMST["Treatment=1"] - RMST["Treatment=0"]))
-}
 
 
 
@@ -227,41 +199,41 @@ for(i in 1:4) {
 
 
 # # ========================================================================================================================================
-# ##### Visualize Proportion of Successes in Binary Variables #####
+# ##### Calculate Raw ATE for each population #####
 # # ========================================================================================================================================
 # 
+# source("Script/Functions/Generate_Data.R")
+# if (!require("survival")) {install.packages("survival", dependencies=TRUE); library(survival)}
 # 
-# rm(list = ls())
+# scenarios <- list(
+#   "1" = list(beta_treatment = -0.5, treatment_shape_effect = 0),
+#   "2" = list(beta_treatment = 0, treatment_shape_effect = 0),
+#   "3" = list(beta_treatment = 0.5, treatment_shape_effect = -0.3),
+#   "4" = list(beta_treatment = -1, treatment_shape_effect = 0.49)
+# )
+# tau = 10
 # 
-# load("Output/Scenario_4_censoring_60.RData")
-# 
-# library(tidyverse)
-# 
-# GEE_results_df <- results_df %>% filter(model == "GEE")
-# 
-# plot(y = GEE_results_df$CI_includes_true_value, x = GEE_results_df$n)
-# 
-# # Create 20 equal-width bins of 'n'
-# GEE_results_df <- GEE_results_df %>%
-#   mutate(n_bin = cut(n, breaks = 20))
-# 
-# # Calculate proportion of CI_includes_true_value == 1 in each bin
-# prop_by_bin <- GEE_results_df %>%
-#   group_by(n_bin) %>%
-#   summarise(
-#     count = n(),
-#     num_success = sum(CI_includes_true_value == 1),
-#     proportion = num_success / count
-#   )
-# 
-# # Plot the proportions
-# ggplot(prop_by_bin, aes(x = n_bin, y = proportion)) +
-#   geom_col(fill = "steelblue") +
-#   labs(x = "n (binned into 20 intervals)", 
-#        y = "Proportion where CI includes true value", 
-#        title = "Proportion of CI_includes_true_value == 1 by n bin") +
-#   theme_minimal() +
-#   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+# for(i in 1:4) {
+#   set.seed(1)
+#   scenario <- scenarios[[i]]
+#   data <- Generate_Data(n = 100000,
+#                         beta_treatment = scenario$beta_treatment,
+#                         treatment_shape_effect = scenario$treatment_shape_effect,
+#                         censoring = FALSE
+#   ) 
+#   
+#   
+#   # Compute the Kaplan-Meier curves
+#   km_fit<- survfit(Surv(ObservedTime, Status) ~ Treatment, data = data)  # One curve for all individuals
+#   
+#   # Extract RMST at time tau
+#   RMST <- survival:::survmean(km_fit, rmean=tau)$matrix[1:2, "rmean"]
+#   print(paste0("Population ", i, ": ", RMST["Treatment=1"] - RMST["Treatment=0"]))
+# }
+
+
+
+
 
 
 
@@ -348,430 +320,104 @@ ggsave(filename = "Output/Plots/PO examples/PO_RMST_high_censoring.svg",
 
 
 
-# # ========================================================================================================================================
-# ##### Bias of Models #####
-# # ========================================================================================================================================
-# 
-# 
-# # To know if models are biased, use them on a big dataset
-# 
-# 
-# rm(list = ls())
-# 
-# source("Script/Functions/bias_big_dataset.R")
-# 
-# 
-# ##### Bias Simulation #####
-# 
-# set.seed(3932)
-# 
-# # Empty list to store all results
-# results_list <- list()
-# 
-# scenarios <- list(
-#   "1" = list(beta_treatment = -0.5, treatment_shape_effect = 0),
-#   "2" = list(beta_treatment = 0, treatment_shape_effect = 0),
-#   "3" = list(beta_treatment = 0.5, treatment_shape_effect = -0.3),
-#   "4" = list(beta_treatment = -1, treatment_shape_effect = 0.49)
-# )
-# 
-# # Define censoring settings
-# censoring_settings <- list(
-#   list(max_censoring_time_unif = 20, censoring_rate = 0.02, label = 20),
-#   list(max_censoring_time_unif = 20, censoring_rate = 0.06, label = 40),
-#   list(max_censoring_time_unif = 15, censoring_rate = 0.08, label = 60)
-# )
-# 
-# # Optional: Comment out scenarios you don't want to run
-# # scenarios["1"] <- NULL  # Uncomment this line to skip scenario 1
-# # scenarios["2"] <- NULL  # Uncomment this line to skip scenario 2
-# # scenarios["3"] <- NULL  # Uncomment this line to skip scenario 3
-# # scenarios["4"] <- NULL  # Uncomment this line to skip scenario 4
-# 
-# library(future)
-# library(future.apply)
-# 
-# # Set parallel plan
-# plan(multisession, workers = availableCores() - 1)  # or multicore on Linux/Mac, multisession is cross-platform
-# 
-# # Create list of combinations to iterate over
-# param_grid <- expand.grid(
-#   scenario_number = names(scenarios),
-#   censoring_idx = seq_along(censoring_settings),
-#   replicate = 1:1000
-# )
-# 
-# start <- Sys.time()
-# 
-# # Use future_lapply to parallelize the loop
-# results_list <- future_lapply(1:nrow(param_grid), function(i) {
-#   row <- param_grid[i, ]
-#   
-#   scenario_number <- as.character(row$scenario_number)
-#   scenario <- scenarios[[scenario_number]]
-#   censoring <- censoring_settings[[row$censoring_idx]]
-#   replicate <- row$replicate
-#   
-#   result_df <- bias_big_dataset(
-#     beta_treatment = scenario$beta_treatment,
-#     treatment_shape_effect = scenario$treatment_shape_effect,
-#     censoring_rate = censoring$censoring_rate,
-#     max_censoring_time_unif = censoring$max_censoring_time_unif
-#   )
-#   
-#   # Add identifying columns
-#   result_df$Scenario <- paste0("Scenario_", scenario_number, "_censoring_", censoring$label)
-#   result_df$Replicate <- replicate
-#   
-#   return(result_df)
-# })
-# 
-# end <- Sys.time()
-# end - start
-# 
-# 
-# # Combine all rows into one final data frame
-# df <- do.call(rbind, results_list)
-# 
-# save(df, file = "Output/model_bias.RData")
-# 
-# 
-# 
-# 
-# # ========================================================================================================================================
-# ##### Visualization of Bias #####
-# # ========================================================================================================================================
-# 
-# rm(list = ls())
-# load("Output/model_bias.RData")
-# library(tidyverse)
-# 
-# # Average bias over replicates
-# df <- df %>%
-#   group_by(Scenario) %>%
-#   summarise(
-#     Scenario = first(Scenario),
-#     true_treatment_effect = first(true_treatment_effect),
-#     PO_bias = mean(PO_bias, na.rm = TRUE),
-#     PO_splines_bias = mean(PO_splines_bias, na.rm = TRUE),
-#     GEE_bias = mean(GEE_bias, na.rm = TRUE),
-#     GEE_splines_bias = mean(GEE_splines_bias, na.rm = TRUE),
-#     RF_bias = mean(RF_bias, na.rm = TRUE),
-#     WB_bias = mean(WB_bias, na.rm = TRUE),
-#     .groups = "drop"
-#   )
-# 
-# # Reshape to long format
-# df_long <- df %>%
-#   pivot_longer(
-#     cols = ends_with("_bias"),
-#     names_to = "model",
-#     values_to = "bias"
-#   )
-# 
-# # Ensure Scenario is a factor with levels in desired top-to-bottom order
-# df_long <- df_long %>%
-#   mutate(Scenario = factor(Scenario, levels = rev(unique(Scenario))))
-# 
-# # Extract true_treatment_effect per scenario (assuming it's constant within scenario)
-# treat_effect_labels <- df_long %>%
-#   group_by(Scenario) %>%
-#   summarise(true_treatment_effect = unique(true_treatment_effect)) %>%
-#   arrange(Scenario)
-# 
-# # Create the plot
-# model_bias_plot <- ggplot(df_long, aes(x = bias, y = Scenario, color = model, shape = model)) +
-#   geom_point(size = 4, position = position_dodge(width = 0.7)) +
-#   geom_vline(xintercept = 0, linetype = "dashed", color = "black") +
-#   labs(
-#     title = "Bias of Models per Scenario",
-#     x = "Bias",
-#     y = "Scenario"
-#   ) +
-#   scale_y_discrete(
-#     labels = paste0(treat_effect_labels$Scenario, " (True TE: ", round(treat_effect_labels$true_treatment_effect, 3), ")")
-#   ) +
-#   theme_minimal() +
-#   theme(
-#     axis.text.y = element_text(size = 10),
-#     legend.title = element_blank()
-#   )
-# 
-# save(model_bias_plot, file = "Output/model_bias_plot.RData")
-  
-
-
-
-
-
-
-
-
 
 # ========================================================================================================================================
 ##### Visualization of Performance Measures #####
 # ========================================================================================================================================
 
-# Create all Plots ============================================================================
 
+
+# Create combined 2x2 plots (one figure per performance measure, 4 populations)
+
+## Load packages:
 library(tidyverse)
 library(patchwork)
+library(rms)
 
+## Load helper functions:
 source("Script/Functions/plot_continuous.R")
 source("Script/Functions/plot_logistic.R")
 source("Script/Functions/create_plots.R")
 
-load("Output/Scenario_1_censoring_20.RData")
-all_plots_1_20 <- create_plots(data = results_df,
-                               treatment_effect_added_y_limits = 0.45,
-                               CI_width_y_limits = c(0, 3.2),
-                               Prob_ATE_smaller_equal_0_y_limits = c(0, 0.5),
-                               Prob_ATE_smaller_equal_true_treatment_effect_y_limits = c(0, 1))
+## Choose the censoring levels to create figures for:
+censoring_levels <- c(20, 40, 60)
 
-load("Output/Scenario_1_censoring_40.RData")
-all_plots_1_40 <- create_plots(data = results_df,
-                               treatment_effect_added_y_limits = 0.45,
-                               CI_width_y_limits = c(0, 3.2),
-                               Prob_ATE_smaller_equal_0_y_limits = c(0, 0.5),
-                               Prob_ATE_smaller_equal_true_treatment_effect_y_limits = c(0, 1))
+## Define the y-axis limits of the Mean p-value plot per population (copied from the Main file):
+p0_limits <- list(
+  "1" = c(0, 0.5),
+  "2" = c(0.2, 0.8),
+  "3" = c(0.15, 0.75),
+  "4" = c(0, 0.7)
+)
 
-load("Output/Scenario_1_censoring_60.RData")
-all_plots_1_60 <- create_plots(data = results_df,
-                               treatment_effect_added_y_limits = 0.5,
-                               CI_width_y_limits = c(0, 3.2),
-                               Prob_ATE_smaller_equal_0_y_limits = c(0, 0.5),
-                               Prob_ATE_smaller_equal_true_treatment_effect_y_limits = c(0, 1))
+## Define the y-axis range around the true ATE in the MATE plot (population 1 at 60% censoring is wider):
+ate_added_limit <- function(population, censoring) {
+  if (population == 1 && censoring == 60) return(0.5)
+  if (population == 1) return(0.45)
+  return(0.35)
+}
 
-load("Output/Scenario_2_censoring_20.RData")
-all_plots_2_20 <- create_plots(data = results_df,
-                               treatment_effect_added_y_limits = 0.35,
-                               CI_width_y_limits = c(0, 3.2),
-                               Prob_ATE_smaller_equal_0_y_limits = c(0.2, 0.8),
-                               Prob_ATE_smaller_equal_true_treatment_effect_y_limits = c(0, 1))
+## Define the four measures (name in create_plots output, index of the all-methods plot, file name):
+measures <- tibble::tribble(
+  ~plot_name,                  ~plot_index, ~file,
+  "RMSE_plot",                 1,           "SMAD",
+  "treatment_effect",          2,           "MATE",
+  "CI_width",                  2,           "MCW",
+  "Prob_ATE_smaller_equal_0",  2,           "Mean_p_value"
+)
 
-load("Output/Scenario_2_censoring_40.RData")
-all_plots_2_40 <- create_plots(data = results_df,
-                               treatment_effect_added_y_limits = 0.35,
-                               CI_width_y_limits = c(0, 3.2),
-                               Prob_ATE_smaller_equal_0_y_limits = c(0.2, 0.8),
-                               Prob_ATE_smaller_equal_true_treatment_effect_y_limits = c(0, 1))
+## Function that combines the 4 populations of one measure into a 2x2 figure:
+combine_populations <- function(all_plots, plot_name, plot_index) {
+  
+  ## Take the all-methods-in-one plot of each population and add the population title:
+  panels <- lapply(1:4, function(i) {
+    all_plots[[i]][[plot_name]][[plot_index]] +
+      ggtitle(paste("Population", i)) +
+      theme(plot.title = element_text(size = 10, face = "bold"))
+  })
+  
+  ## Arrange as 2x2 with one shared legend at the bottom and tags A-D:
+  wrap_plots(panels, ncol = 2) +
+    plot_layout(guides = "collect") +
+    plot_annotation(tag_levels = "A") &
+    theme(legend.position = "bottom")
+}
 
-load("Output/Scenario_2_censoring_60.RData")
-all_plots_2_60 <- create_plots(data = results_df,
-                               treatment_effect_added_y_limits = 0.35,
-                               CI_width_y_limits = c(0, 3.2),
-                               Prob_ATE_smaller_equal_0_y_limits = c(0.2, 0.8),
-                               Prob_ATE_smaller_equal_true_treatment_effect_y_limits = c(0, 1))
+## Create the figures for each censoring level:
+## Note: create_plots() reads results_df from the global environment, so load() must run at top level:
+dir.create("Output/Plots/Combined", recursive = TRUE, showWarnings = FALSE)
 
-load("Output/Scenario_3_censoring_20.RData")
-all_plots_3_20 <- create_plots(data = results_df,
-                               treatment_effect_added_y_limits = 0.35,
-                               CI_width_y_limits = c(0, 3.2),
-                               Prob_ATE_smaller_equal_0_y_limits = c(0.15, 0.75),
-                               Prob_ATE_smaller_equal_true_treatment_effect_y_limits = c(0, 1))
-
-load("Output/Scenario_3_censoring_40.RData")
-all_plots_3_40 <- create_plots(data = results_df,
-                               treatment_effect_added_y_limits = 0.35,
-                               CI_width_y_limits = c(0, 3.2),
-                               Prob_ATE_smaller_equal_0_y_limits = c(0.15, 0.75),
-                               Prob_ATE_smaller_equal_true_treatment_effect_y_limits = c(0, 1))
-
-load("Output/Scenario_3_censoring_60.RData")
-all_plots_3_60 <- create_plots(data = results_df,
-                               treatment_effect_added_y_limits = 0.35,
-                               CI_width_y_limits = c(0, 3.2),
-                               Prob_ATE_smaller_equal_0_y_limits = c(0.15, 0.75),
-                               Prob_ATE_smaller_equal_true_treatment_effect_y_limits = c(0, 1))
-
-load("Output/Scenario_4_censoring_20.RData")
-all_plots_4_20 <- create_plots(data = results_df,
-                               treatment_effect_added_y_limits = 0.35,
-                               CI_width_y_limits = c(0, 3.2),
-                               Prob_ATE_smaller_equal_0_y_limits = c(0, 0.7),
-                               Prob_ATE_smaller_equal_true_treatment_effect_y_limits = c(0, 1))
-
-load("Output/Scenario_4_censoring_40.RData")
-all_plots_4_40 <- create_plots(data = results_df,
-                               treatment_effect_added_y_limits = 0.35,
-                               CI_width_y_limits = c(0, 3.2),
-                               Prob_ATE_smaller_equal_0_y_limits = c(0, 0.7),
-                               Prob_ATE_smaller_equal_true_treatment_effect_y_limits = c(0, 1))
-
-load("Output/Scenario_4_censoring_60.RData")
-all_plots_4_60 <- create_plots(data = results_df,
-                               treatment_effect_added_y_limits = 0.35,
-                               CI_width_y_limits = c(0, 3.2),
-                               Prob_ATE_smaller_equal_0_y_limits = c(0, 0.7),
-                               Prob_ATE_smaller_equal_true_treatment_effect_y_limits = c(0, 1))
-
-# =============================================================================================
-
-
-
-# RMSE ========================================================================================
-# Loop through the scenarios 1 to 4
-for (i in 1:4) {
-  # Loop through the censoring levels: 20, 40, 60
-  for (j in c(20, 40, 60)) {
+for (censoring in censoring_levels) {
+  
+  ## Create all individual plots for each population:
+  all_plots <- list()
+  
+  for (i in 1:4) {
     
-    # Construct the object name as a string
-    obj_name <- paste0("all_plots_", i, "_", j)
+    ## Load the results of population i (this creates the object results_df):
+    load(paste0("Output/Scenario_", i, "_censoring_", censoring, ".RData"))
     
-    # Get object
-    obj <- get(obj_name)
+    ## Create the plots of population i:
+    all_plots[[i]] <- create_plots(
+      data = results_df,
+      treatment_effect_added_y_limits = ate_added_limit(i, censoring),
+      CI_width_y_limits = c(0, 3.2),
+      Prob_ATE_smaller_equal_0_y_limits = p0_limits[[as.character(i)]],
+      Prob_ATE_smaller_equal_true_treatment_effect_y_limits = c(0, 1)
+    )
+  }
+  
+  ## Create and save one 2x2 figure per measure:
+  for (k in seq_len(nrow(measures))) {
     
-    p <- obj$RMSE_plot[[1]] + ggtitle(paste("Population", i, "Censoring", j, "%"))
+    p <- combine_populations(all_plots, measures$plot_name[k], measures$plot_index[k])
     
-    ggsave(filename = paste0("Output/Plots/RMSE/RMSE_", "Scenario_", i, "_censoring_", j, ".svg"),
+    ggsave(filename = paste0("Output/Plots/Combined/", measures$file[k], "_censoring_", censoring, ".svg"),
            plot = p,
            units = "in",
-           width = 4.7, height = 3) # 4.7 is exactly the width of the latex document, 3 is ~4.7/1.6
-    
+           width = 7, height = 6)
   }
 }
-# =============================================================================================
-
-
-
-
-# Estimated ATE ===============================================================================
-# Loop through the scenarios 1 to 4
-for (i in 1:4) {
-  # Loop through the censoring levels: 20, 40, 60
-  for (j in c(20, 40, 60)) {
-    
-    # Construct the object name as a string
-    obj_name <- paste0("all_plots_", i, "_", j)
-    
-    # Get object
-    obj <- get(obj_name)
-    
-    p <- obj$treatment_effect[[1]] + plot_annotation(title = paste("Population", i, "Censoring", j, "%")) 
-    
-    ggsave(filename = paste0("Output/Plots/Estimated_ATE/Estimated_ATE_grid_", "Scenario_", i, "_censoring_", j, ".svg"),
-           plot = p,
-           units = "in",
-           width = 4.7, height = 5) # 4.7 is exactly the width of the latex document, 3 is ~4.7/1.6
-    
-    p <- obj$treatment_effect[[2]] + ggtitle(paste("Population", i, "Censoring", j, "%"))
-    
-    ggsave(filename = paste0("Output/Plots/Estimated_ATE/Estimated_ATE_", "Scenario_", i, "_censoring_", j, ".svg"),
-           plot = p,
-           units = "in",
-           width = 4.7, height = 3) # 4.7 is exactly the width of the latex document, 3 is ~4.7/1.6
-    
-    
-  }
-}    
-# =============================================================================================
-
-
-
-
-# CI Width ====================================================================================
-# Loop through the scenarios 1 to 4
-for (i in 1:4) {
-  # Loop through the censoring levels: 20, 40, 60
-  for (j in c(20, 40, 60)) {
-    
-    # Construct the object name as a string
-    obj_name <- paste0("all_plots_", i, "_", j)
-    
-    # Get object
-    obj <- get(obj_name)
-    
-    p <- obj$CI_width[[1]] + plot_annotation(title = paste("Population", i, "Censoring", j, "%"))
-    
-    ggsave(filename = paste0("Output/Plots/CI_Width/CI_Width_grid_", "Scenario_", i, "_censoring_", j, ".svg"),
-           plot = p,
-           units = "in",
-           width = 4.7, height = 5) # 4.7 is exactly the width of the latex document, 3 is ~4.7/1.6
-    
-
-    p <- obj$CI_width[[2]] + ggtitle(paste("Population", i, "Censoring", j, "%"))
-    
-    ggsave(filename = paste0("Output/Plots/CI_Width/CI_Width_", "Scenario_", i, "_censoring_", j, ".svg"),
-           plot = p,
-           units = "in",
-           width = 4.7, height = 3) # 4.7 is exactly the width of the latex document, 3 is ~4.7/1.6
-
-  }
-} 
-# =============================================================================================
-
-
-
-
-# Prob ATE smaller equal 0 ====================================================================
-# Loop through the scenarios 1 to 4
-for (i in 1:4) {
-  # Loop through the censoring levels: 20, 40, 60
-  for (j in c(20, 40, 60)) {
-    
-    # Construct the object name as a string
-    obj_name <- paste0("all_plots_", i, "_", j)
-    
-    # Get object
-    obj <- get(obj_name)
-
-    p <- obj$Prob_ATE_smaller_equal_0[[1]] + plot_annotation(title = paste("Population", i, "Censoring", j, "%"))
-
-    ggsave(filename = paste0("Output/Plots/Prob_smaller_0/Prob_ATE_smaller_equal_0_grid_",
-                             "Scenario_", i, "_censoring_", j, ".svg"),
-           plot = p,
-           units = "in",
-           width = 4.7, height = 5) # 4.7 is exactly the width of the latex document, 3 is ~4.7/1.6
-    
-    p <- obj$Prob_ATE_smaller_equal_0[[2]] + ggtitle(paste("Population", i, "Censoring", j, "%"))
-    
-    ggsave(filename = paste0("Output/Plots/Prob_smaller_0/Prob_ATE_smaller_equal_0_",
-                             "Scenario_", i, "_censoring_", j, ".svg"),
-           plot = p,
-           units = "in",
-           width = 4.7, height = 3) # 4.7 is exactly the width of the latex document, 3 is ~4.7/1.6
-
-    
-  }
-} 
-# =============================================================================================
-
-
-
-
-# Prob ATE smaller equal true ATE =============================================================
-# Loop through the scenarios 1 to 4
-for (i in 1:4) {
-  # Loop through the censoring levels: 20, 40, 60
-  for (j in c(20, 40, 60)) {
-    
-    # Construct the object name as a string
-    obj_name <- paste0("all_plots_", i, "_", j)
-    
-    # Get object
-    obj <- get(obj_name)
-
-    p <- obj$Prob_ATE_smaller_equal_true_treatment_effect[[1]] + plot_annotation(title = paste("Population", i, "Censoring", j, "%"))
-
-    ggsave(filename = paste0("Output/Plots/Prob_smaller_ATE/Prob_ATE_smaller_equal_true_ATE_grid_",
-                             "Scenario_", i, "_censoring_", j, ".svg"),
-           plot = p,
-           units = "in",
-           width = 4.7, height = 5) # 4.7 is exactly the width of the latex document, 3 is ~4.7/1.6
-    
-    p <- obj$Prob_ATE_smaller_equal_true_treatment_effect[[2]] + ggtitle(paste("Population", i, "Censoring", j, "%"))
-
-    ggsave(filename = paste0("Output/Plots/Prob_smaller_ATE/Prob_ATE_smaller_equal_true_ATE_",
-                             "Scenario_", i, "_censoring_", j, ".svg"),
-           plot = p,
-           units = "in",
-           width = 4.7, height = 3) # 4.7 is exactly the width of the latex document, 3 is ~4.7/1.6
-    
-  }
-} 
-# =============================================================================================
-
-
 
 
 
@@ -823,7 +469,7 @@ ggsave(filename = paste0("Output/Plots/Censoring Visualization/CDF_censoring.svg
 ##### Visualize Variable Distributions #####
 # ========================================================================================================================================
 
-library(tidyverse)
+if (!require("tidyverse")) {install.packages("tidyverse", dependencies=TRUE); library(tidyverse)}
 
 source("Script/Functions/Generate_Data.R")
 
