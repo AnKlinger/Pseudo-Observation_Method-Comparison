@@ -165,7 +165,7 @@ params <- data.frame(
 )
 
 ## Open the graphics device and set up a 2x2 layout with space for a shared legend at the bottom:
-svg("Output/Plots/Scenario Visualization/Kaplan_Meier_all_populations.svg",
+svg("Output/Plots/Scenario Visualization/Kaplan_Meier_all_populations.png",
     width = 7, height = 6.5)
 par(mfrow = c(2, 2), mar = c(4, 4, 3, 1) + 0.1, oma = c(3, 0, 0, 0))
 
@@ -244,9 +244,9 @@ dev.off()
 ##### Visualization of Pseudo-Observations #####
 # ========================================================================================================================================
 
-library(survival)
-library(tidyverse)
-library(patchwork)
+if (!require("survival")) {install.packages("survival", dependencies=TRUE); library(survival)}
+if (!require("tidyverse")) {install.packages("tidyverse", dependencies=TRUE); library(tidyverse)}
+if (!require("patchwork")) {install.packages("patchwork", dependencies=TRUE); library(patchwork)}
 source("Script/Functions/Generate_Data.R")
 
 set.seed(101)
@@ -300,11 +300,11 @@ p3 <- ggplot(high_censoring, aes(x = pseudo)) +
   scale_x_continuous(limits = c(0,11))
 
 # Save plots as svg
-ggsave(filename = "Output/Plots/PO examples/PO_RMST_low_censoring.svg",
+ggsave(filename = "Output/Plots/PO examples/PO_RMST_low_censoring.png",
        plot = p1,
        units = "in",
        width = 4.7, height = 3) # 4.7 is exactly the width of the latex document, 3 is ~4.7/1.6
-ggsave(filename = "Output/Plots/PO examples/PO_RMST_high_censoring.svg",
+ggsave(filename = "Output/Plots/PO examples/PO_RMST_high_censoring.png",
        plot = p3,
        units = "in",
        width = 4.7, height = 3) # 4.7 is exactly the width of the latex document, 3 is ~4.7/1.6
@@ -330,9 +330,9 @@ ggsave(filename = "Output/Plots/PO examples/PO_RMST_high_censoring.svg",
 # Create combined 2x2 plots (one figure per performance measure, 4 populations)
 
 ## Load packages:
-library(tidyverse)
-library(patchwork)
-library(rms)
+if (!require("tidyverse")) {install.packages("tidyverse", dependencies=TRUE); library(tidyverse)}
+if (!require("patchwork")) {install.packages("patchwork", dependencies=TRUE); library(patchwork)}
+if (!require("rms")) {install.packages("rms", dependencies=TRUE); library(rms)}
 
 ## Load helper functions:
 source("Script/Functions/plot_continuous.R")
@@ -412,7 +412,7 @@ for (censoring in censoring_levels) {
     
     p <- combine_populations(all_plots, measures$plot_name[k], measures$plot_index[k])
     
-    ggsave(filename = paste0("Output/Plots/Combined/", measures$file[k], "_censoring_", censoring, ".svg"),
+    ggsave(filename = paste0("Output/Plots/Combined/", measures$file[k], "_censoring_", censoring, ".png"),
            plot = p,
            units = "in",
            width = 7, height = 6)
@@ -425,7 +425,7 @@ for (censoring in censoring_levels) {
 ##### Visualize Censoring Distribution #####
 # ========================================================================================================================================
 
-library(tidyverse)
+if (!require("tidyverse")) {install.packages("tidyverse", dependencies=TRUE); library(tidyverse)}
 
 source("Script/Functions/Generate_Data.R")
 
@@ -458,7 +458,7 @@ p <- ggplot(censoring_distribution_data, aes(x = censoring_time, y = cdf, linety
   #scale_linetype_manual(name = "Amount of Censoring", # change legend label
                         #values = c("dotted", "dashed", "solid")) 
 
-ggsave(filename = paste0("Output/Plots/Censoring Visualization/CDF_censoring.svg"),
+ggsave(filename = paste0("Output/Plots/Censoring Visualization/CDF_censoring.png"),
        plot = p,
        units = "in",
        width = 4.7, height = 3) # 4.7 is exactly the width of the latex document, 3 is ~4.7/1.6
@@ -496,7 +496,7 @@ p <- ggplot(data = df_long, aes(x = A, y = Value, color = A)) +
   ) #+
   #scale_color_discrete(name = "", labels = c("A = 0", "A = 1"))
 
-ggsave(filename = paste0("Output/Plots/Variable Distributions/Variable Distributions.svg"),
+ggsave(filename = paste0("Output/Plots/Variable Distributions/Variable Distributions.png"),
        plot = p,
        units = "in",
        width = 4.7, height = 3) # 4.7 is exactly the width of the latex document, 3 is ~4.7/1.6
@@ -515,8 +515,8 @@ ggsave(filename = paste0("Output/Plots/Variable Distributions/Variable Distribut
 # ========================================================================================================================================
 
 # load libaries
-library(tidyverse)
-library(rms)
+if (!require("tidyverse")) {install.packages("tidyverse", dependencies=TRUE); library(tidyverse)}
+if (!require("rms")) {install.packages("rms", dependencies=TRUE); library(rms)}
 
 # load needed functions
 source("Script/Functions/plot_continuous.R")
@@ -708,28 +708,98 @@ p5 <- ggplot(results_df, aes(x = log2(n), y = Prob_ATE_smaller_equal_true_treatm
 
 # save plots as svg
 
-ggsave(filename = "Output/Plots/CI showcase/SMAD.svg",
+ggsave(filename = "Output/Plots/CI showcase/SMAD.png",
        plot = p1,
        units = "in",
        width = 4.7, height = 3) # 4.7 is exactly the width of the latex document, 3 is ~4.7/1.6
 
-ggsave(filename = "Output/Plots/CI showcase/MATE.svg",
+ggsave(filename = "Output/Plots/CI showcase/MATE.png",
        plot = p2,
        units = "in",
        width = 4.7, height = 3) # 4.7 is exactly the width of the latex document, 3 is ~4.7/1.6
 
-ggsave(filename = "Output/Plots/CI showcase/MCW.svg",
+ggsave(filename = "Output/Plots/CI showcase/MCW.png",
        plot = p3,
        units = "in",
        width = 4.7, height = 3) # 4.7 is exactly the width of the latex document, 3 is ~4.7/1.6
 
-ggsave(filename = "Output/Plots/CI showcase/Mean_p_value.svg",
+ggsave(filename = "Output/Plots/CI showcase/Mean_p_value.png",
        plot = p4,
        units = "in",
        width = 4.7, height = 3) # 4.7 is exactly the width of the latex document, 3 is ~4.7/1.6
 
-ggsave(filename = "Output/Plots/CI showcase/Mean_P.svg",
+ggsave(filename = "Output/Plots/CI showcase/Mean_P.png",
        plot = p5,
        units = "in",
        width = 4.7, height = 3) # 4.7 is exactly the width of the latex document, 3 is ~4.7/1.6
 
+
+
+
+
+# ========================================================================================================================================
+##### Literature Review #####
+# ========================================================================================================================================
+
+if (!require("tidyverse")) {install.packages("tidyverse", dependencies=TRUE); library(tidyverse)}
+if (!require("magrittr")) {install.packages("magrittr", dependencies=TRUE); library(magrittr)}
+if (!require("readxl")) {install.packages("readxl", dependencies=TRUE); library(readxl)}
+literature_review <- readxl::read_excel("Data/Papers that cited Andersen RMST 2004 paper.xlsx")
+
+literature_review <- literature_review %>%
+  mutate(row_id = row_number()) %>%
+  rename(used_PO = `Used PO in Analysis`,
+         used_GLM_on_PO = `Used GLM framework to analyse PO`,
+         used_other_on_PO = `Used another method to analyse PO`) %T>%
+  {print(nrow(.)) } %>%
+  filter(!is.na(used_PO)) %T>% # there were some citations that were not publications, these are them
+  {print(nrow(.)) } %>%
+  filter(used_GLM_on_PO != 'unclear') %T>% # in one paper it wasn't clear, this is taken out
+  {print(nrow(.)) } %>%
+  mutate(used_GLM_on_PO = as.numeric(used_GLM_on_PO),
+         used_other_on_PO = as.numeric(used_other_on_PO))
+
+# save(literature_review, file = "Output/literature_review_cleaned.RData")
+load("Output/literature_review_cleaned.RData")
+
+ggplot(data = literature_review, aes(x = year)) +
+  geom_bar()
+
+df <- literature_review %>%
+  group_by(year) %>%
+  summarise(sum_used_PO = sum(used_PO),
+            sum_used_GLM_on_PO = sum(used_GLM_on_PO),
+            sum_used_other_on_PO = sum(used_other_on_PO))
+
+ggplot(data = df, aes(y = sum_used_other_on_PO, x = year)) +
+  geom_point()
+
+literature_review %>%
+  filter(is.na(used_other_on_PO))
+
+# share of other methods in PO papers
+literature_review %>%
+  filter(used_PO == 1 & year %in% c(2022:2026)) %>%
+  summarise(number_other = sum(used_other_on_PO),
+            number_GLM = sum(used_GLM_on_PO),
+            number_PO = n())
+
+literature_review %>%
+  filter(used_PO == 1 & year %in% c(2007:2013)) %>%
+  summarise(number_other = sum(used_other_on_PO),
+            number_GLM = sum(used_GLM_on_PO),
+            number_PO = n())
+
+literature_review %>%
+  filter(used_PO == 1 & year %in% c(2014:2017)) %>%
+  summarise(number_other = sum(used_other_on_PO),
+            number_GLM = sum(used_GLM_on_PO),
+            number_PO = n())
+
+literature_review %>%
+  filter(used_PO == 1 & year %in% c(2018:2021)) %>%
+  summarise(number_other = sum(used_other_on_PO),
+            number_GLM = sum(used_GLM_on_PO),
+            number_PO = n())
+
+  
