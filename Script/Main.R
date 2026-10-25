@@ -37,9 +37,9 @@ scenarios <- list(
 
 # Optional: Comment out scenarios you don't want to run
 # scenarios["1"] <- NULL  # Uncomment this line to skip scenario 1
-scenarios["2"] <- NULL  # Uncomment this line to skip scenario 2
-scenarios["3"] <- NULL  # Uncomment this line to skip scenario 3
-scenarios["4"] <- NULL  # Uncomment this line to skip scenario 4
+# scenarios["2"] <- NULL  # Uncomment this line to skip scenario 2
+# scenarios["3"] <- NULL  # Uncomment this line to skip scenario 3
+# scenarios["4"] <- NULL  # Uncomment this line to skip scenario 4
 
 # Define censoring settings
 censoring_settings <- list(
@@ -49,6 +49,8 @@ censoring_settings <- list(
 )
 
 start <- Sys.time()
+
+set.seed(327)
 
 # Loop over scenarios and censoring settings
 for (scenario_number in names(scenarios)) {
