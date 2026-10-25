@@ -165,8 +165,8 @@ params <- data.frame(
 )
 
 ## Open the graphics device and set up a 2x2 layout with space for a shared legend at the bottom:
-svg("Output/Plots/Scenario Visualization/Kaplan_Meier_all_populations.png",
-    width = 7, height = 6.5)
+png("Output/Plots/Scenario Visualization/Kaplan_Meier_all_populations.png",
+    width = 7, height = 6.5, units = "in", res = 300)
 par(mfrow = c(2, 2), mar = c(4, 4, 3, 1) + 0.1, oma = c(3, 0, 0, 0))
 
 ## Create one panel per population:
