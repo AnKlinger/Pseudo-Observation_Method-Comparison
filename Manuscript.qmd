@@ -1,5 +1,5 @@
 ---
-title: "Manuscript"
+title: "Beyond GEE? Modelling Pseudo-Observations for Restricted Mean Survival Time: A Simulation Study"
 format:
   pdf:
     fig-pos: 'H'
@@ -10,7 +10,7 @@ author: Andreas Klinger
 abstract: > 
   The pseudo-observation method transforms right-censored survival data into complete data, allowing standard regression methods without explicitly modelling censoring. In restricted mean survival time (RMST) analysis, these pseudo-observations are unbiased for the mean but have an irregular, skewed distribution. 
 
-    We performed a literature review that confirmed that Generalized Estimating Equations (GEE) are the dominant modelling approach, while a targeted search revealed almost no prior systematic comparison of its performance with other methods. This study addresses this gap through a reproducible simulation study evaluating the performance of GEE against semi-parametric Proportional Odds and non-parametric Random Forest methods.
+    We performed a literature review that confirmed that Generalized Estimating Equations (GEE) are the dominant modelling approach. Although non-GEE methods have become more popular in recent years, it is rare that their performance is compared with GEE. This study addresses this gap through a reproducible simulation study evaluating the performance of GEE against semi-parametric Proportional Odds and non-parametric Random Forest methods.
 
     In particular, this study compares the modelling approaches' ability to use pseudo-observations to estimate the average treatment effect (ATE) for the RMST. The ATE was estimated by comparing the model-predicted mean potential outcomes. In a novel simulation approach, a broad grid of sample sizes with few repetitions instead of a few sample sizes with many repetitions is simulated.
 
@@ -20,15 +20,15 @@ abstract: >
 \newpage
 ## Introduction
 
-In 2003 Andersen and Klein et al. first introduced regression analysis on the so-called \textit{pseudo-observations} in survival analysis. [@andersen2003generalised] Expanded upon in various papers, these pseudo-observations are useful because right-censored data can be transformed into complete data, with a value for each observation. [@andersen2004regression] [@klein2005regression] [@klein2006modelling] [@andersen2007regression] [@parner2010regression] Classic regression methods can be used on these values without worrying about censoring, making inference and predictions from statistical models not suited to survival analysis possible.
+In 2003 Andersen and Klein et al. first introduced regression analysis on the so-called \textit{pseudo-observations} in survival analysis [@andersen2003generalised].  Expanded upon in various papers, these pseudo-observations are useful because right-censored data can be transformed into complete data, with a value for each observation [@andersen2004regression] [@klein2005regression] [@klein2006modelling] [@andersen2007regression] [@parner2010regression]. Classic regression methods can be used on these values without worrying about censoring, making inference and predictions from statistical models not suited to survival analysis possible.
 
 Pseudo-observations are essentially leave-one-out estimators and can be used for estimating the survival curve $S(\tau)$ or restricted mean survival time $RMST(\tau)$, where $\tau$ is a specific timepoint. $S(\tau)$ is the value of the survival curve at this timepoint, while $RMST(\tau)$ corresponds to the area under the survival curve $S$ up until $\tau$. The Average Treatment Effect (ATE) is used to estimate the causal effect of a treatment.
 
-Classic regression methods that use pseudo-observations based on either $S(\tau)$ or $RMST(\tau)$ as the outcome have properties well suited for inference. [@andersen2003generalised] [@andersen2004regression] This makes it possible to easily calculate the covariate-adjusted ATE from a model with pseudo-observations as the outcome in a survival analysis setting.
+Classic regression methods that use pseudo-observations based on either $S(\tau)$ or $RMST(\tau)$ as the outcome have properties well suited for inference [@andersen2003generalised] [@andersen2004regression].  This makes it possible to easily calculate the covariate-adjusted ATE from a model with pseudo-observations as the outcome in a survival analysis setting.
 
 ### Literature Review
 
-Modelling pseudo-observations in survival analysis is typically done using a Generalized Linear Model (GLM) framework, most of the time Generalized Estimating Equations (GEE) specifically. Andersen, Hansen and Klein's work [@andersen2004regression], the first publication about the use of pseudo-observations for the RMST, was cited by 184 other scientific works as of March 2026, based on the scientific publication database Scopus. To examine the methods for modelling pseudo-observations used in the literature so far, we reviewed the modelling method for each scientific work.
+Modelling pseudo-observations in survival analysis is typically done using a Generalized Linear Model (GLM) framework, most of the time Generalized Estimating Equations (GEE) specifically. Andersen, Hansen and Klein's work [@andersen2004regression], the first publication about the use of pseudo-observations for the RMST, was cited by 184 other scientific publications as of March 2026, based on the Scopus database. 
 
 ```{r}
 #| include: false
@@ -37,9 +37,9 @@ Modelling pseudo-observations in survival analysis is typically done using a Gen
 ```
 
 
-Of these 184 scientific works, 166 were publications, while one publication was not clear on how they modelled pseudo-observations. Of the remaining 165, 103 (62%) actually utilised pseudo-observations. 92 of these 103 papers (89%) used a GLM framework for modelling, while 17 used some other method (17%), with 8 (8%) utilizing both and 2 being purely theoretical. 11 of the 17 'other' papers are from 2022 or later. The share of PO papers using other methods was 0% in 2007–13, 9% in 2014–17, 15% in 2018–21 and 26% in 2022–26.
+Of these 184 scientific publications, 166 were full journal publications (papers), while one publication was not clear on how they modelled pseudo-observations. 103 out of 165 of the remaining papers (62%) actually utilised pseudo-observations. To examine the methods for modelling pseudo-observations used in the literature so far, we reviewed the modelling method for each paper. 92 of these 103 papers (89%) used a GLM framework for modelling, while 17 used some other method (17%), with 8 (8%) utilizing both and 2 being purely theoretical. The number of pseudo-observation papers using other methods was 0 in 2007–13 (out of 12 papers; 0%), 2 in 2014–17 (out of 22; 9%), 4 in 2018–21 (out of 26; 15%) and 11 in 2022–26 (out of 43; 26%).
 
-From our view, modelling pseudo-observations in a non-conventional (non-GLM) framework has become increasingly popular over the last years, though their asymptotic properties with pseudo-observations as the outcome may not be known. It is therefore important to compare non-conventional methods with the theoretically sound GEE in simulations, which only 3 of the 17 papers with 'other' methods did.
+From our view, modelling pseudo-observations in a non-conventional (non-GLM) framework has become increasingly popular over the last years, though properties of such frameworks may be unclear. It is therefore important to compare non-conventional methods with the theoretically justified GEE in simulations, which only 3 of the 17 papers with 'other' methods did [@orsini2025bayesian] [@wang2024tau1] [@wang2024tau2].
 
 ```{r}
 #| include: false
@@ -49,7 +49,9 @@ From our view, modelling pseudo-observations in a non-conventional (non-GLM) fra
 # In summary, while there is an influx of new methods for modelling pseudo-observations, we hardly found any publications actually comparing the performance of these methods with GEE models.
 ```
 
-This paper will present a simulation study concentrating on the restricted mean survival time (RMST), where pseudo-observations are calculated and used as the outcome variable in various modelling approaches. Performance comparisons are done by examining bias and precision of the estimated average treatment effect (ATE) on RMST, in a simulation study described with the ADEMP structure. [@morris2019using] Unlike conventional simulation studies that rely on many repetitions at a limited set of sample sizes, this study employs a different strategy: the computational complexity is shifted toward covering a wide range of sample sizes $n$ with few repetitions.
+This paper will present a simulation study concentrating on the restricted mean survival time (RMST), where pseudo-observations are calculated and used as the outcome variable in various modelling approaches. Performance comparisons are done by examining bias and precision of the estimated average treatment effect (ATE) on RMST, in a simulation study described with the ADEMP structure [@morris2019using].
+
+Unlike conventional simulation studies that rely on many repetitions at a limited set of sample sizes, this study employs a different strategy: the computational complexity is shifted toward covering a wide range of sample sizes $n$ with few repetitions. This gives us a more general picture of the impact $n$ has on the performance measures and allows us to pinpoint critical sample sizes, using smoothers for visualization instead of point estimates.
 
 
 ## Background and Notation
@@ -76,7 +78,7 @@ which is the area under the survival curve. With right-censoring, the calculatio
 
 which is just the area under the survival curve up to the point $\tau < \infty$. The interpretation of $\mu(\tau)$ can be more relevant than the interpretation of $\mu$ as well. For example, $\mu(2)$ could be the expected time until recurrence of a disease up to 2 years after treatment.
 
-Since the true survival curve is not known and right-censoring occurs, estimation of the survival function $S(t)$ with right-censoring can be done via the Kaplan-Meier estimator. [@kaplan1958nonparametric]
+Since the true survival curve is not known and right-censoring occurs, estimation of the survival function $S(t)$ with right-censoring can be done via the Kaplan-Meier estimator [@kaplan1958nonparametric]. 
 
 ### ATE - Average Treatment Effect {#sec-ATEchapter} 
 
@@ -93,7 +95,7 @@ Calculating the ATE is often more complex than just directly computing the avera
 
 In this example, $\hat{y}_i(A=1, X=x_i)$ is the predicted RMST for the ith subject, with explanatory variable values $x_i$ and assuming that treatment was applied, i.e. $A=1$. $\hat{y}_i(A=0, X=x_i)$ is then the predicted RMST for the ith subject with exactly the same values for all variables except for $A = 0$. Both possible predictions for $y_i$ are called potential outcomes for subject $i$.
 
-While there is theory supporting the normal distribution of $\hat{ATE}$ from generalized linear models, there is generally no theory supporting this assumption for flexible machine learning models. [@Hoffman2022gcomputation] In such situations, the ATE can be estimated as shown in equation \ref{eqn:ATE_estimate_from_predictions}, using any models fitted with pseudo-observations as the outcome. Confidence intervals can be obtained through bootstrap replications, building a model on each bootstrap sample. 
+While there is theory supporting the normal distribution of $\hat{ATE}$ from generalized linear models, there is generally no theory supporting this assumption for flexible machine learning models [@Hoffman2022gcomputation].  In such situations, the ATE can be estimated as shown in equation \ref{eqn:ATE_estimate_from_predictions}, using any models fitted with pseudo-observations as the outcome. Confidence intervals can be obtained through bootstrap replications, building a model on each bootstrap sample. 
 
 To calculate the \textit{ATE}, one would have to know exactly how the true RMSTs differ for each subject of a (finite) population between the cases $A=1$ and $A=0$, and use equation \ref{eqn:ATE_estimate_from_predictions}, replacing the estimates by the true quantities. This is naturally not possible in real observational studies, but easily possible in a simulation. The resulting survival curves (using the same population with $A=1, A=0$) will be called \textit{True} survival curves. In realistic observational studies, treatment allocation $A$ may be dependent on $X$. The \textit{True} survival curves can then be compared to simple Kaplan-Meier estimated survival curves, which will be called \textit{Descriptive} survival curves, where the treatment allocation $A$ may be based on $X$ and the distribution of $X$ may differ between the treated and untreated population. The \textit{raw ATE} is then calculated as the difference between the RMSTs of the \textit{Descriptive} survival curves.
 
@@ -168,7 +170,7 @@ This simulation study compared the ability of multiple modelling methods, includ
 
 ### ADEMP
 
-A detailed explanation of the simulation study framework is provided here, using the popular ADEMP (\textbf{A}im, \textbf{D}ata-Generating Mechanism, \textbf{E}stimands and Targets of Analysis, \textbf{M}ethods, \textbf{P}erformance Measures) structure. [@morris2019using]
+A detailed explanation of the simulation study framework is provided here, using the popular ADEMP (\textbf{A}im, \textbf{D}ata-Generating Mechanism, \textbf{E}stimands and Targets of Analysis, \textbf{M}ethods, \textbf{P}erformance Measures) structure [@morris2019using]. 
 
 The **Aim** of this simulation study was to compare the performance of modelling approaches in estimating the ATE with pseudo-observations of the RMST at $\tau = 10$ as outcome variable.
 
@@ -189,7 +191,7 @@ The exact structure of the models will be shown in a \textit{conceptual} way, om
     \theta = X_1 + X_2 + X_3 + X_4 + A
 \end{equation}
 
-where $\theta$ is a vector of the pseudo-observations for $RMST(\tau=10)$. $GEE$ uses an identity link, an independent correlation structure and the standard sandwich estimator. $PO$ is a cumulative logit link model, and the mean instead of the mode is predicted. The idea behind $PO$ was to use a method that is flexible in that it does not directly assume a distribution of its outcome but is still comparable to ordinary least squares in predicting the mean. [@Harrell2024]
+where $\theta$ is a vector of the pseudo-observations for $RMST(\tau=10)$. $GEE$ uses an identity link, an independent correlation structure and the standard sandwich estimator. $PO$ is a cumulative logit link model, and the mean instead of the mode is predicted. The idea behind $PO$ was to use a method that is flexible in that it does not directly assume a distribution of its outcome but is still comparable to ordinary least squares in predicting the mean [@Harrell2024]. 
 
 $GEE_{complex}$ and $PO_{complex}$ assumed a more complex structure:
 
@@ -202,7 +204,7 @@ $GEE_{complex}$ and $PO_{complex}$ assumed a more complex structure:
 
 where $RCS(.)$ refers to restricted cubic splines with three knots, placed at the 10th, 50th, and 90th percentiles of the continuous covariate $X_1,...,X_4$. The expression "$\times A$" signifies an interaction with the treatment allocation variable $A$. 
 
-$RF$ and $CRF$ received variables $X_1,X_2,X_3,X_4,A$ with $\theta$ as the outcome. The size of the random subsample for predictors for both methods was manually set to be two. The number of trees for the $CRF$ method was manually set to 4000, as recommended in the vignette of the R package the method is implemented in. [@Tibshirani2025generalizedrandomforestvignette]
+$RF$ and $CRF$ received variables $X_1,X_2,X_3,X_4,A$ with $\theta$ as the outcome. The size of the random subsample for predictors for both methods was manually set to be two. The number of trees for the $CRF$ method was manually set to 4000, as recommended in the vignette of the R package the method is implemented in [@Tibshirani2025generalizedrandomforestvignette]. 
 
 Finally, the oracle model $WB$ assumed the correct structure, directly regressing the survival time on $X_1,X_4,$ and $A$. The shape parameter can change depending on $A$ to incorporate non-proportional hazards. 
 
@@ -270,11 +272,9 @@ The mean bootstrap p-value largely mirrored the bias results. For positive effec
 
 ## Discussion 
 
-PERFORMANCE COMPARISONS FOR NEW METHODS ARE VERY IMPORTANT. WE HOPE TO MAKE IT EASIER TO COMPARE METHODS IN A SIMULATION STUDY WITH THIS PAPER.
+This simulation compared strategies for estimating the average treatment effect (ATE) in restricted mean survival time (RMST) at $\tau=10$ using pseudo-observations. GEE models ($GEE$/$GEE_{complex}$), proportional-odds models (($PO$/$PO_{complex}$) and machine-learning approaches (random forest, $RF$; causal random forest, $CRF$) were evaluated with pseudo-observations of $RMST(\tau = 10)$ as the outcome. A parametric Weibull model ($WB$) was used as benchmark/oracle model. Unlike conventional designs, this simulation study used a dense grid of sample sizes $n=100,...1050$ with few or no repetitions per $n$. 1000 sample sizes were chosen between 100 and 1050, such that they were equidistant on the $log_2(n)$ scale. Sample sizes $n=125,250,500,1000$ were repeated an additional 100 times. Results were evaluated by smoothing performance measures. By providing a reproducible simulation framework with a novel use of sample size, this study begins to close the gap in performance comparisons of methods for modelling pseudo-observations and makes future comparisons easier to run.
 
 #### General Remarks
-
-This simulation compared strategies for estimating the average treatment effect (ATE) in restricted mean survival time (RMST) at $\tau=10$ using pseudo-observations. GEE models ($GEE$/$GEE_{complex}$), proportional-odds models (($PO$/$PO_{complex}$) and machine-learning approaches (random forest, $RF$; causal random forest, $CRF$) were evaluated with pseudo-observations of $RMST(\tau = 10)$ as the outcome. A parametric Weibull model ($WB$) was used as benchmark/oracle model. Unlike conventional designs, this simulation study used a dense grid of sample sizes $n=100,...1050$ with few or no repetitions per $n$. 1000 sample sizes were chosen between 100 and 1050, such that they were equidistant on the $log_2(n)$ scale. Sample sizes $n=125,250,500,1000$ were repeated an additional 100 times. Results were evaluated by smoothing performance measures.
 
 \textbf{GEE} models produced near-unbiased ATEs across scenarios, including non-PH, consistent with pseudo-observation theory for mean modelling under uninformative censoring. CI widths were wider than $RF$/$PO$ models. Adding spline terms and treatment interactions further inflated variance at small 
 n, with diminishing differences at sample sizes greater than 250. This is likely because the many additional degrees of freedom lead to overfitting. \textbf{PO} models showed bias and poor behaviour regarding the Mean p-value. This may be the case because the method targets cumulative probabilities rather than the mean of pseudo-observations.  $PO$ models also did not deal with non-proportional hazards well, worsening performance in comparison to proportional hazard settings. Spline terms and treatment interactions generally inflated variance without apparent bias reduction. For \textbf{RF}, a significant bias/variance tradeoff could be observed. It had the narrowest confidence intervals in all scenarios and achieved the best SMAD in populations 2-4, when the true ATE was zero or small (0.224). However, $RF$ showed negative bias when the ATE was positive (population 1 and 4), an especially pronounced trait when the ATE was big in population 1 (0.777), which lead to the worst SMAD out of all methods in this population. In-sample prediction may have dampened treatment contrasts, leading to little variation in predictions and the negative bias overwhelming the variance gains. \textbf{CRF} showed  moderate bias in population 2 but dealt well with non-proportional hazards, with confidence intervals comparable to $GEE$. The oracle model \textbf{WB} was stable and showed slight bias in population 3 and 4 with non-proportional hazards, due to the way $RMST(10)$ was computed through marginal hazard averaging. \textbf{Censoring} levels varied from 20\%, 40\% and 60\% per population, but had seemingly no effect on performance measures (see the Supplement for censoring levels other than 20%). 
