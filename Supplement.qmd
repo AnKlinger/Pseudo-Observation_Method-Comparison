@@ -8,13 +8,11 @@ bibliography: "PO_paper_bib.bib"
 author: Andreas Klinger
 ---
 
-Scopus search term: ( TITLE-ABS-KEY ( "pseudo*" OR "jackknife*" OR "leave-one-out" OR ( leave W/5 out ) ) ) AND ( TITLE-ABS-KEY ( ( time W/5 analy\* ) OR "survival" OR "censor*" ) ) AND ( ALL ( "simulat*" ) ) AND ( SRCTITLE ( "BMC MEDICAL RESEARCH" OR "BIOMETRIKA" OR "BIOSTATISTICS" OR "STATISTICAL METHODS IN MEDICAL RESEARCH" OR "BIOMETRICAL JOURNAL" OR "STATISTICS IN MEDICINE" OR "BIOMETRICS" OR "INTERNATIONAL JOURNAL OF BIOSTATISTICS" OR "COMPUTATIONAL STATISTICS" OR "JOURNAL OF THE AMERICAN STATISTICAL ASSOCIATION" ) ) AND PUBYEAR \> 2002 AND PUBYEAR \< 2026
-
 ## Data-Generating Process
 
 The effect of the treatment allocation variable $A$ on $Y$ is confounded with $X$ because the covariate distributions in the treatment groups are different, like in an observational study.
 
-Figure \ref{fig:Data Generation Graph} shows the causal structure of the correlated covariates $X_1,X_2,X_3,X_4$, treatment allocation variable $A$, and survival time $T$. $X_1$ influences both $A$ and $T$, $X_2$ only $A$, $X_3$ has no direct effect on either $A$ or $T$ but is highly correlated with the other covariates, and finally, $X_4$ influences only $T$.
+@fig-datagenerationgraph shows the causal structure of the correlated covariates $X_1,X_2,X_3,X_4$, treatment allocation variable $A$, and survival time $T$. $X_1$ influences both $A$ and $T$, $X_2$ only $A$, $X_3$ has no direct effect on either $A$ or $T$ but is highly correlated with the other covariates, and finally, $X_4$ influences only $T$.
 
 ![A graph visualizing the relationship between the variables $X_1,X_2,X_3,X_4$, treatment allocation $A$ and survival time $T$.](Output/Plots/Data%20Generation%20Graph.png){#fig-datagenerationgraph}
 
@@ -78,14 +76,19 @@ Based on the covariate adjusted difference in $RMST(\tau = 10)$ between the cont
 
 The four populations were simulated by four pairwise parameter sets: for each population $p \in \{1,2,3,4\}$, the parameters were assigned as $\beta_5 = \{-0.5,0,0.5,-1\}_p$ and $\gamma = \{0,0,-0.3,0.49\}_p$. That is, the $p$-th element from each vector was used together.
 
-Population 1 shows a clear positive ATE (ATE=0.777, i.e. group with $A = 1$ has higher RMST) with proportional hazards. Population 2 has the exact same survival curves with proportional hazards and thus no ATE at all (ATE=0). Population 3 corresponds to no difference in the ATE (ATE=0, raw ATE = 0.399) even though the survival curves are crossing (=non-proportional hazards). Population 4 shows a mild positive ATE (ATE=0.224, raw ATE = 0.528) with non-proportional hazards and crossing survival curves. Descriptive and True were calculated as written in the ATE chapter in the main paper.
+As seen in @fig-populationKM, Population 1 shows a clear positive ATE (ATE=0.777, i.e. group with $A = 1$ has higher RMST) with proportional hazards. Population 2 has the exact same survival curves with proportional hazards and thus no ATE at all (ATE=0). Population 3 corresponds to no difference in the ATE (ATE=0, raw ATE = 0.399) even though the survival curves are crossing (=non-proportional hazards). Population 4 shows a mild positive ATE (ATE=0.224, raw ATE = 0.528) with non-proportional hazards and crossing survival curves. Descriptive and True were calculated as written in the ATE section of the main paper.
 
 ![Survival functions ("True") and Kaplan-Meier estimated survival curves ("Descriptive", unadjusted for $X$) of the treatment groups of all populations.](Output/Plots/Scenario Visualization/Kaplan_Meier_all_populations.png){#fig-populationKM}
 
 20% censoring was reached by setting $c_{max}=20$ and $\lambda_C=0.02$. 40% was reached with $c_{max}=20$ and $\lambda_C=0.06$. Finally, 60% censoring was reached by $c_{max}=15$ and $\lambda_C=0.08$. @fig-censoringCDF shows the cumulative distribution of censoring times when these values are inserted into the mixture distribution of equation \ref{eqn:Censoring}.
 
+
+
+![Cumulative Distribution of censoring times, reaching 20\%, 40\% and 60\% censoring at $\tau=10$.](Output/Plots/Censoring Visualization/CDF_censoring.png){#fig-censoringCDF}
+
 ## Confidence Bands of RCS Smoother
 
+@fig-SMADwithCI, @fig-MATEwithCI, @fig-MCWwithCI and @fig-meanpvaluewithCI show the RCS smoother confidence bands of the method with the generally lowest ($RF$) and highest ($GEE_{complex}$) variance.
 
 ![{A plot showing the SMAD of $RF$ and $GEE_{complex}$ with confidence bands for the RCS smoother.](Output/Plots/CI showcase/SMAD.png){#fig-SMADwithCI}
 
@@ -99,7 +102,7 @@ Population 1 shows a clear positive ATE (ATE=0.777, i.e. group with $A = 1$ has 
 
 ## Additional Results
 
-Results for 20% and 60% censoring level are found here.
+Results for 20% and 60% censoring level are found here. **SMAD**: @fig-SMAD20, @fig-SMAD60. **MATE**: @fig-MATE20, @fig-MATE60. **MCW**: @fig-MCW20, @fig-MCW60. **Mean p-value**: @fig-meanpvalue20, @fig-meanpvalue60.  
 
 ### SMAD
 
