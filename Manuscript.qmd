@@ -39,7 +39,7 @@ Modelling pseudo-observations in survival analysis is typically done using a Gen
 
 Of these 184 scientific publications, 18 were not full journal publications (papers), 62 did not use pseudo-observations, and 1 was unclear on the type of modelling method used ([@fig-flowchartlitrev]). To examine the methods for modelling pseudo-observations used in the literature so far, we reviewed the modelling method for each paper. 92 of these 103 papers (89%) used a GLM framework for modelling, while 17 used some 'other' method (17%), with 8 (8%) utilizing both and 2 being purely theoretical. The number of pseudo-observation papers using 'other' methods was 0 in 2007–13 (out of 12 papers; 0%), 2 in 2014–17 (out of 22; 9%), 4 in 2018–21 (out of 26; 15%) and 11 in 2022–26 (out of 43; 26%).
 
-![RCS smoothed curves of SMAD for all populations with 40% censoring.](Output/Plots/Literature Review Flowchart/Flowchart.png){#fig-flowchartlitrev}
+![A Flowchart showing the exclusion process of the literature review.](Output/Plots/Literature Review Flowchart/Flowchart.png){#fig-flowchartlitrev}
 
 
 From our view, modelling pseudo-observations in a non-conventional (non-GLM) framework has become increasingly popular over the last years, though properties of such frameworks may be unclear. It is therefore important to compare non-conventional methods with the theoretically justified GEE in simulations, which only 3 of the 17 papers with 'other' methods did [@orsini2025bayesian] [@wang2024tau1] [@wang2024tau2].
